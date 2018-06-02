@@ -20,8 +20,7 @@ struct Event {
 public:
   Event()
     : mask_(kEventNone),
-      handler_(NULL),
-      data_(NULL) {}
+      handler_(NULL) {}
 
 public:
   int mask_;

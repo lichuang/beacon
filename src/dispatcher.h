@@ -5,6 +5,7 @@
 #include <string>
 #include "typedef.h"
 
+using namespace std;
 class Engine;
 
 class IDispatcher {
@@ -18,13 +19,13 @@ public:
   const string& String() { return name_; }
 
   virtual int Init(int setsize)         = 0;
-  vitual int Add(int fd, int mask)      = 0;
+  virtual int Add(int fd, int mask)     = 0;
   virtual int Del(int fd, int delmask)  = 0;
   virtual int Poll(struct timeval *tvp) = 0;
 
 protected:
-  string name_;
   Engine *engine_;
+  string name_;
 };
 
 #endif // __DISPATCHER_H__

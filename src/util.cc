@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <stdio.h>
 #include "errcode.h"
 #include "util.h"
 
@@ -7,7 +8,7 @@ uint64_t GetCurrentMs() {
   time_t sec;
   msec_t msec;
 
-  if (gettimeofday(&tv) < 0) {
+  if (gettimeofday(&tv, NULL) < 0) {
     return kError;
   }
 

@@ -1,17 +1,15 @@
 #include <climits>
 #include <list>
 #include "engine.h"
-#include "epoll.h"
+#include "epoll_dispatcher.h"
 #include "errcode.h"
-
-static const int kMaxTimeId = INT_MAX;
-static const int kMaxFindTimeIdCnt = 10;
+#include "util.h"
 
 Engine::Engine(int setsize)
   : setsize_(setsize),
     stop_(true),
     maxfd_(-1),
-    next_time_id_(0),
+    timeid_bits_(INT_MAX),
     current_ms_(0) {
   events_.resize(setsize);
   dispatcher_ = new Epoll();
@@ -19,9 +17,10 @@ Engine::Engine(int setsize)
 }
 
 Engine::~Engine() {
+  delete dispatcher_;
 }
 
-Engine::Stop() {
+void Engine::Stop() {
   stop_ = true;
 }
 
@@ -80,9 +79,9 @@ int Engine::CreateTimeEvent(msec_t ms, ITimerHandler* handler) {
   }
   ms += current_ms_;
 
-  iter = time_events_[ms];
+  iter = time_events_.find(ms);
   if (iter != time_events_.end()) {
-    iter.second->next_ = new TimeEvent(id, ms, handler);
+    iter->second->next_ = new TimeEvent(id, ms, handler);
   } else {
     time_events_[ms] = new TimeEvent(id, ms, handler);
   }
@@ -90,12 +89,10 @@ int Engine::CreateTimeEvent(msec_t ms, ITimerHandler* handler) {
 }
 
 msec_t Engine::nextTimeout() {
-  TimeEventsIter iter;
   if (time_events_.empty()) {
     return 0;
   }
-  TimeEventsIter iter = time_events_.first();
-  return iter.second()->msec_;
+  return time_events_.begin()->second->msec_;
 }
 
 void Engine::FireEvent(int fd, int mask) {
@@ -115,9 +112,9 @@ void Engine::processTimeEvents() {
   }
   current_ms_ = GetCurrentMs();
   
-  iter = time_events_.first();
+  iter = time_events_.begin();
   while (true) {
-    event = iter.second();
+    event = iter->second;
     if (event->msec_ > current_ms_) {
       break;
     }
@@ -134,14 +131,13 @@ void Engine::processTimeEvents() {
   }
 
   for (timeiter = outtimes.begin(); timeiter != outtimes.end(); ++timeiter) {
-    time_events_.erase(timeiter);
+    time_events_.erase(*timeiter);
   }
 }
 
 void Engine::Main() {
   struct timeval tv;
   list<Event*>::iterator iter;
-  int i;
 
   stop_ = false;
   while (!stop_) {

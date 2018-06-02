@@ -4,12 +4,14 @@
 #include <list>
 #include <vector>
 #include <map>
+#include "bitmap.h"
 #include "event.h"
 #include "typedef.h"
 
 using namespace std;
 
 typedef map<msec_t, TimeEvent*>::iterator TimeEventsIter;
+class IDispatcher;
 
 class Engine {
 public:
@@ -25,7 +27,7 @@ public:
   int DeleteEvent(int fd, int mask);
   void FireEvent(int fd, int mask);
 
-  int CreateTimeEvent(long long ms, ITimerHandler* handler);
+  int CreateTimeEvent(msec_t ms, ITimerHandler* handler);
 
   void Main();
 
@@ -38,7 +40,7 @@ private:
   bool stop_;
   int maxfd_;
   vector<Event> events_;
-  list<*Event> fired_;
+  list<Event*> fired_;
 
   Bitmap timeid_bits_;
   msec_t current_ms_;

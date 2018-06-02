@@ -9,7 +9,7 @@ Bitmap::~Bitmap() {
 }
 
 int Bitmap::Next() {
-  int cnt = 0;
+  size_t cnt = 0;
   while (cnt < bits_.size()) {
     int index = next_ / 32;
     int temp  = next_ % 32;
@@ -19,9 +19,7 @@ int Bitmap::Next() {
     ++next_;
     ++cnt;
   }
-  if (cnt >= bits_.size()) {
-    return -1;
-  }
+  return -1;
 }
 
 void Bitmap::Clear(int x) {
