@@ -9,9 +9,10 @@ public:
   Epoll();
   virtual ~Epoll();
 
-  virtual int Init();
+  virtual int Init(int setsize);
   vitual int Add(int fd, int mask);
   virtual int Del(int fd, int delmask);
+  virtual int Poll(struct timeval *tvp);
 
 private:
   int efd_;

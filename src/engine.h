@@ -21,12 +21,18 @@ public:
 
   void Stop();
 
-  int CreateEvent(int fd, int mask, IEventHandler *handler, void *data);
+  int CreateEvent(int fd, int mask, IEventHandler *handler);
   int DeleteEvent(int fd, int mask);
   void FireEvent(int fd, int mask);
 
-  int CreateTimeEvent(long long ms, ITimerHandler* handler, void* data);
-    
+  int CreateTimeEvent(long long ms, ITimerHandler* handler);
+
+  void Main();
+
+private:
+  msec_t nextTimeout();
+  void processTimeEvents();
+
 private:
   int setsize_;
   bool stop_;

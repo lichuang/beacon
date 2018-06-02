@@ -17,11 +17,10 @@ public:
 
   const string& String() { return name_; }
 
-  virtual bool Init()                   = 0;
-  virtual int Init()                    = 0;
+  virtual int Init(int setsize)         = 0;
   vitual int Add(int fd, int mask)      = 0;
   virtual int Del(int fd, int delmask)  = 0;
-  virtual int Poll(struct timeval *tvp);
+  virtual int Poll(struct timeval *tvp) = 0;
 
 protected:
   string name_;

@@ -8,6 +8,8 @@ Epoll::Epoll(Engine *engine)
 }
 
 Epoll::~Epoll() {
+  delete [] events_;
+  close(efd_);
 }
 
 int Epoll::Init(int setsize) {
@@ -15,7 +17,8 @@ int Epoll::Init(int setsize) {
   if (efd_ == -1) {
     return kError;
   }
-
+  events_ = new struct epoll_event[setsize];
+  set_size_ = setsize;
   return kOk;
 }
 

@@ -1,6 +1,7 @@
 #include <climits>
 #include <list>
 #include "engine.h"
+#include "epoll.h"
 #include "errcode.h"
 
 static const int kMaxTimeId = INT_MAX;
@@ -12,8 +13,9 @@ Engine::Engine(int setsize)
     maxfd_(-1),
     next_time_id_(0),
     current_ms_(0) {
-  events_.reserve(setsize);
-  fired_.reserve(setsize);
+  events_.resize(setsize);
+  dispatcher_ = new Epoll();
+  dispatcher_->Init(setsize);
 }
 
 Engine::~Engine() {
@@ -23,17 +25,19 @@ Engine::Stop() {
   stop_ = true;
 }
 
-int Engine::CreateEvent(int fd, int mask, IEventHandler *handler, void *data) {
+int Engine::CreateEvent(int fd, int mask, IEventHandler *handler) {
+  Event *event;
+  int ret;
+
   if (fd >= setsize_) {
     return kFdOutOfRange;
   }
 
-  int ret = dispatcher_->Add(fd, mask);
+  ret = dispatcher_->Add(fd, mask);
   if (ret != kOk) {
     return ret;
   }
-  Event *event = GetEvent(fd);
-  event->data_ = data;
+  event = GetEvent(fd);
   event->handler_ = handler;
   if (fd > maxfd_) {
     maxfd_ = fd;
@@ -114,6 +118,9 @@ void Engine::processTimeEvents() {
   iter = time_events_.first();
   while (true) {
     event = iter.second();
+    if (event->msec_ > current_ms_) {
+      break;
+    }
     event->handler_->Handle();
     save = event;
     outtimes.push_back(event->msec_);
@@ -132,7 +139,7 @@ void Engine::processTimeEvents() {
 }
 
 void Engine::Main() {
-  struct timeval tv, *tvp;
+  struct timeval tv;
   list<Event*>::iterator iter;
   int i;
 
@@ -140,7 +147,7 @@ void Engine::Main() {
   while (!stop_) {
     current_ms_ = GetCurrentMs();
 
-    // 1. find nearest timeout msec
+    // 1. find next timeout msec
     msec_t msec = nextTimeout();
 
     // 2. poll io events
@@ -151,15 +158,19 @@ void Engine::Main() {
       // TODO?
       continue;
     }
-    tv.tv_sec  = msec / 1000;
-    tv.tv_usec = (msec % 1000) * 1000;
-    tvp = &tv;
-    dispatcher_->Poll(tvp);
+    if (msec == 0) {
+      tv.tv_sec  = 0;
+      tv.tv_usec = 5000;
+    } else {
+      tv.tv_sec  = msec / 1000;
+      tv.tv_usec = (msec % 1000) * 1000;
+    }
+    dispatcher_->Poll(&tv);
 
     // 3. fire events
     for (iter = fired_.begin(); iter != fired_.end(); ++iter) {
       (*iter)->handler_->Handle((*iter)->mask_);
-      (*iter)->mask_ = 0;
+      (*iter)->mask_ = kEventNone;
     }
 
     // 4. process timer events
