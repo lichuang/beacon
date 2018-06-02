@@ -12,7 +12,7 @@ Engine::Engine(int setsize)
     timeid_bits_(INT_MAX),
     current_ms_(0) {
   events_.resize(setsize);
-  dispatcher_ = new Epoll();
+  dispatcher_ = new Epoll(this);
   dispatcher_->Init(setsize);
 }
 

@@ -1,13 +1,16 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include "logger.h"
 
+/*
 static const char* kLogLevelString[] = {
-  "Fatal",
-  "Error",
-  "Info",
-  "Debug",
+  "F",
+  "E",
+  "I",
+  "D",
   NULL
-}
+};
+*/
 
 Logger::Logger() {
 }
@@ -22,17 +25,19 @@ void Logger::Init(int level, const string& path) {
 
 void Logger::Log(int level, const char* file, int line, const char *format, ...) {
   va_list args;
+  char buff[1024];
+  int n;
+
   va_start(args, format);
   va_end(args);
 
-  char buf[1024];
   n  = 0;
   n  = snprintf(buff, 1024,
-                     "%s", logger->time_buff);
+                     "%s", "eeee");
   n += snprintf(buff + n, 1024 - n,
                      " %s:%d ", file, line);
   n += vsnprintf(buff + n, 1024 - n,
                       format, args);
 
-  printf("%s", buf);
+  printf("%s", buff);
 }

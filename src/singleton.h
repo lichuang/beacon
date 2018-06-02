@@ -5,16 +5,15 @@ template <typename T>
 class Singleton {
 public:
   static T* GetInstance() {
+    if (instance_ == NULL) {
+      instance_ = new T();
+    }
     return instance_;
   }
 
-  static void Init() {
-    instance_ = new T();
-  }
-
 protected:
-  Singleton() : instance_(NULL) {}
-  virtual ~Single() {}
+  Singleton() {}
+  virtual ~Singleton() {}
 
   static T* instance_;
 
@@ -22,5 +21,7 @@ private:
   Singleton(const Singleton&); 
   Singleton& operator =(const Singleton&);
 };
+
+template<typename T> T* Singleton<T>::instance_ = NULL;
 
 #endif // __SINGLETON_H__

@@ -15,7 +15,7 @@ DEPS=$(patsubst $(OBJ_DIR)/%.o, $(DEPS_DIR)/%.d, $(OBJS))
 INCLUDE= -I$(INCLUDE_DIR) -I$(LUA_DIR)/src  -I$(LDB_DIR)/src
 
 CC=g++
-CFLAGS=-Wall -Werror -g -DDEBUG $(MYCFLAGS)
+CFLAGS=-Wall -Werror -g $(MYCFLAGS)
 LDFLAGS= -L -lpthread
 
 MYCFLAGS = 
