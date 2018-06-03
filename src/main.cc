@@ -2,6 +2,7 @@
 #include "engine.h"
 #include "log.h"
 #include "redis_session.h"
+#include "server.h"
 
 int main() {
   Config config;

@@ -23,20 +23,24 @@ class Session : public IEventHandler {
 public:
   Session(int fd, const string& ip, int port, Server *server)
     : fd_(fd),
-      ip_(ip),
-      port_(port),
-      server_(server)
-      query_buf_(new Buffer(kQueryBufferLen)) {}
+      addr_buf_(Buffer(kClientAddressSize)),
+      server_(server),
+      query_buf_(new Buffer(kQueryBufferLen)) {
+    snprintf(addr_buf_.Start(), addr_buf_.WritableLength(), "%s:%d", ip.c_str(), port);      
+    addr_buf_.AdvanceWrite(kClientAddressSize);
+  }
   virtual ~Session() {
     delete query_buf_;
   }
 
   virtual int Handle(int mask) = 0;
 
+  int Fd() { return fd_; }
+  const char* String() { return addr_buf_.Start(); }
+
 protected:
   int fd_;
-  string ip_;
-  int port_;
+  Buffer addr_buf_;
   Server* server_;
   Buffer* query_buf_;
 };

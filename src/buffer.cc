@@ -31,7 +31,7 @@ int Buffer::ReadableLength() {
 }
 
 void Buffer::Reserve(int addlen) {
-  if (buf_.capacity() - write_pos_ >= addlen) {
+  if (int(buf_.capacity() - write_pos_) >= addlen) {
     return;
   }
   buf_.reserve(addlen + write_pos_);

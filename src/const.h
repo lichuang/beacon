@@ -10,4 +10,7 @@ const int kMaxAcceptPerCall = 1000;
 // client query buffer size
 const int kQueryBufferLen = 16 * 1024;
 
+// client address buffer length
+const int kClientAddressSize = 20;
+
 #endif // __CONST_H__

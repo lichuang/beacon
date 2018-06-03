@@ -1,5 +1,5 @@
-#ifndef __EPOLL_DISPATCHER_H__
-#define __EPOLL_DISPATCHER_H__
+#ifndef __EPOLL_H__
+#define __EPOLL_H__
 
 #include <sys/epoll.h>
 #include "dispatcher.h"
@@ -19,4 +19,4 @@ private:
   struct epoll_event *events_;
 };
 
-#endif // __EPOLL_DISPATCHER_H__
+#endif // __EPOLL_H__

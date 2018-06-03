@@ -1,5 +1,6 @@
 #include "errcode.h"
 #include "log.h"
+#include "net.h"
 #include "redis_session.h"
 #include "server.h"
 
@@ -17,7 +18,7 @@ int RedisSession::Handle(int mask) {
     ret = handleRead();
   }
   if (ret != kOk) {
-    server_->FreeSession(fd_);
+    server_->FreeSession(this);
     return ret;
   }
 
@@ -25,7 +26,7 @@ int RedisSession::Handle(int mask) {
     ret = handleWrite();
   }
   if (ret != kOk) {
-    server_->FreeSession(fd_);
+    server_->FreeSession(this);
     return ret;
   }
 
@@ -35,13 +36,13 @@ int RedisSession::Handle(int mask) {
 int RedisSession::handleRead() {
   int ret;
 
-  ret = TcpRead(fd, query_buf_);
+  ret = TcpRead(fd_, query_buf_);
 
   if (ret < 0) {
     return ret;
   }
 
-  Infof("query from %s:%d %s", ip_.ctr(), port_, query_buf_->Start());
+  Infof("query from %s %s", String(), query_buf_->Start());
   return kOk;
 }
 

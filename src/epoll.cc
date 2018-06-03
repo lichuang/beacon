@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "epoll_dispatcher.h"
+#include "epoll.h"
 #include "errcode.h"
 #include "engine.h"
 
@@ -32,8 +32,8 @@ int Epoll::Add(int fd, int mask) {
   
   ee.events = 0;
   mask |= event->mask_;
-  if (mask & kEventRead) ee.events = EPOLLIN;
-  if (mask & kEventRead) ee.events = EPOLLOUT;
+  if (mask & kEventRead)  ee.events = EPOLLIN;
+  if (mask & kEventWrite) ee.events = EPOLLOUT;
   ee.data.fd = fd;
   if (epoll_ctl(efd_, op, fd, &ee) == -1)  {
     return kError;
