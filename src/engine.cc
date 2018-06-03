@@ -137,6 +137,7 @@ void Engine::processTimeEvents() {
 
 void Engine::Main() {
   struct timeval tv;
+  int ret;
   list<Event*>::iterator iter;
 
   stop_ = false;
@@ -165,8 +166,11 @@ void Engine::Main() {
 
     // 3. fire events
     for (iter = fired_.begin(); iter != fired_.end(); ++iter) {
-      (*iter)->handler_->Handle((*iter)->mask_);
+      ret = (*iter)->handler_->Handle((*iter)->mask_);
       (*iter)->mask_ = kEventNone;
+      if (ret != kOk) {
+        dispatcher_->Del();
+      }
     }
 
     // 4. process timer events

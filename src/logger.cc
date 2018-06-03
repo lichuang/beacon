@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <vector>
 #include "logger.h"
@@ -60,6 +61,9 @@ void Logger::Log(int level, const char* file, int line, const char *format, ...)
   int n;
   LogItem *item;
 
+  if (level < level_) {
+    return;
+  }
   va_start(args, format);
   va_end(args);
 
@@ -75,4 +79,8 @@ void Logger::Log(int level, const char* file, int line, const char *format, ...)
   buf[n] = '\0';
 
   printf("%s", buf);
+
+  if (level == kFatalLogLevel) {
+    abort();
+  }
 }
