@@ -49,8 +49,8 @@ int Epoll::Del(int fd, int delmask) {
 
   ee.events = 0;
   mask |= event->mask_;
-  if (mask & kEventRead) ee.events = EPOLLIN;
-  if (mask & kEventRead) ee.events = EPOLLOUT;
+  if (mask & kEventRead)  ee.events = EPOLLIN;
+  if (mask & kEventWrite) ee.events = EPOLLOUT;
   ee.data.fd = fd;
   if (mask != kEventNone) {
     ret = epoll_ctl(efd_, EPOLL_CTL_MOD, fd, &ee);

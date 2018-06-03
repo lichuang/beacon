@@ -14,7 +14,7 @@ public:
   SessionFactory() {}
   virtual ~SessionFactory() {}
 
-  virtual Session* CreateSession(int fd, const string& ip, int port, Server *server);
+  virtual Session* CreateSession(int fd, const string& ip, int port, Server *server) = 0;
 };
 
 class Session : public IEventHandler {

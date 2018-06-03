@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <vector>
+#include "log.h"
 #include "logger.h"
 
 static const int kLogBufSize = 500;

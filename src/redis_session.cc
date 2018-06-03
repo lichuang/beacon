@@ -1,8 +1,6 @@
+#include "errcode.h"
 #include "redis_session.h"
-
-Session* RedisSessionFactory::CreateSession(int fd, const string& ip, int port, Server *server) {
-  return new RedisSession(fd, ip, port, server);
-}
+#include "server.h"
 
 RedisSession::RedisSession(int fd, const string& ip, int port, Server *server)
   : Session(fd, ip, port, server) {

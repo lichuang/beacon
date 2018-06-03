@@ -1,10 +1,12 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include <map>
 #include "config.h"
 #include "const.h"
 #include "event.h"
 
+using namespace std;
 struct Config;
 class  Engine;
 class  Session;
@@ -13,10 +15,10 @@ typedef map<int, Session*> SessionMap;
 
 class Server : public IEventHandler {
 public:
-  Server(Config *conf);
+  Server(Config *conf, Engine*);
   ~Server();
 
-  int Run(Config* conf);
+  int Run();
   virtual int Handle(int mask);
 
   void FreeSession(int fd);

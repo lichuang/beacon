@@ -1,10 +1,14 @@
-#include <error.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <arpa/inet.h>
+#include "errcode.h"
 #include "const.h"
 #include "net.h"
 #include "typedef.h"
@@ -33,13 +37,13 @@ static int netListen(char *err, int s, struct sockaddr *sa, socklen_t len, int b
 	if (bind(s,sa,len) == -1) {
 		setNetError(err, "bind: %s", strerror(errno));
 		close(s);
-		return kError
+		return kError;
 	}
 
 	if (listen(s, backlog) == -1) {
 		setNetError(err, "listen: %s", strerror(errno));
 		close(s);
-		return kError
+		return kError;
 	}
 	return kOk;
 }
@@ -55,7 +59,7 @@ int CreateTcpServer(int port, const char *addr, int backlog, char *err) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;    /* No effect if bindaddr != NULL */
 
-	if ((rv = getaddrinfo(bindaddr,_port,&hints,&servinfo)) != 0) {
+	if ((rv = getaddrinfo(addr,_port,&hints,&servinfo)) != 0) {
 		setNetError(err, "%s", gai_strerror(rv));
 		return kError;
 	}
@@ -69,7 +73,7 @@ int CreateTcpServer(int port, const char *addr, int backlog, char *err) {
 		goto end;
 	}
 	if (p == NULL) {
-		anetsetNetError(err, "unable to bind socket, errno: %d", errno);
+		setNetError(err, "unable to bind socket, errno: %d", errno);
 		goto error;
 	}
 
@@ -98,7 +102,7 @@ static int Accept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
 	return fd;
 }
 
-int TcpAccept(int sfd, string *cip, string *err) {
+int TcpAccept(int sfd, string *cip, int *port, char *err) {
 	int fd;
 	struct sockaddr_storage sa;
 	socklen_t salen = sizeof(sa);
@@ -147,5 +151,5 @@ int setBlock(int fd, bool non_block, char *err) {
 }
 
 int SetNonBlock(int fd, char *err) {
-	return setBlock(fd, true);
+	return setBlock(fd, true, err);
 }

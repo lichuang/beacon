@@ -167,9 +167,8 @@ void Engine::Main() {
     // 3. fire events
     for (iter = fired_.begin(); iter != fired_.end(); ++iter) {
       ret = (*iter)->handler_->Handle((*iter)->mask_);
-      (*iter)->mask_ = kEventNone;
       if (ret != kOk) {
-        dispatcher_->Del();
+        //dispatcher_->Del();
       }
     }
 
