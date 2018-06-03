@@ -50,6 +50,7 @@ int Server::Handle(int mask) {
         return kOk;
       }
       Infof("accpted %s:%d", cip.c_str(), cport);
+      SetNonBlock(fd, NULL);
       session = config_->factory_->CreateSession(fd, cip, cport, this);
       if (session == NULL) {
         Errorf("new session fail, close connection from %s:%d", cip.c_str(), cport);

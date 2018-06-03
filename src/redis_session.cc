@@ -1,4 +1,5 @@
 #include "errcode.h"
+#include "log.h"
 #include "redis_session.h"
 #include "server.h"
 
@@ -32,7 +33,15 @@ int RedisSession::Handle(int mask) {
 }
 
 int RedisSession::handleRead() {
-  
+  int ret;
+
+  ret = TcpRead(fd, query_buf_);
+
+  if (ret < 0) {
+    return ret;
+  }
+
+  Infof("query from %s:%d %s", ip_.ctr(), port_, query_buf_->Start());
   return kOk;
 }
 

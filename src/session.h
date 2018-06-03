@@ -2,6 +2,8 @@
 #define __SESSION_H__
 
 #include <string>
+#include "const.h"
+#include "buffer.h"
 #include "event.h"
 
 using namespace std;
@@ -23,8 +25,11 @@ public:
     : fd_(fd),
       ip_(ip),
       port_(port),
-      server_(server) {}
-  virtual ~Session() {}
+      server_(server)
+      query_buf_(new Buffer(kQueryBufferLen)) {}
+  virtual ~Session() {
+    delete query_buf_;
+  }
 
   virtual int Handle(int mask) = 0;
 
@@ -32,7 +37,8 @@ protected:
   int fd_;
   string ip_;
   int port_;
-  Server *server_;
+  Server* server_;
+  Buffer* query_buf_;
 };
 
 #endif// __SESSION_H__

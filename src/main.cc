@@ -1,8 +1,13 @@
+#include "config.h"
+#include "engine.h"
 #include "log.h"
+#include "redis_session.h"
 
 int main() {
+  Config config;
+  config.factory_ = new RedisSessionFactory();
   Logger::GetInstance()->Init(kDebugLogLevel, "./log/");
-  Fatalf("hello");
-
-  return 0;
+  Engine engine(config.setsize_);
+  Server server(&config, &engine);
+  return server.Run();
 }

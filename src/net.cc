@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include "buffer.h"
 #include "errcode.h"
 #include "const.h"
 #include "net.h"
@@ -152,4 +153,41 @@ int setBlock(int fd, bool non_block, char *err) {
 
 int SetNonBlock(int fd, char *err) {
 	return setBlock(fd, true, err);
+}
+
+int TcpRead(int fd, Buffer* buf) {
+  int n;
+  int len, save, nbytes;
+  char *p;
+
+  nbytes = 0;
+  do {
+    len = buf->WritableLength();
+    p   = buf->NextWrite();
+
+    do {
+      n = recv(fd, p, len, 0);
+      save = errno;
+    } while (errno == EINTR);
+
+    if (n == -1) {
+      if (save == EAGAIN || save == EWOULDBLOCK) {
+        // non-blocking mode, there is no data in the buffer now
+        break;
+      } else if (save != EINTR) {
+        // some error has occured
+        return kError;
+      }
+    }
+
+    // socket has been closed
+    if (n == 0) {
+      return kError;
+    }
+
+    buf->AdvanceRead(n);
+    nbytes += n;
+  } while (n == len);
+
+  return nbytes;
 }
