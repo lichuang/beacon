@@ -62,7 +62,7 @@ void Logger::Log(int level, const char* file, int line, const char *format, ...)
   int n;
   LogItem *item;
 
-  if (level < level_) {
+  if (level > level_) {
     return;
   }
   va_start(args, format);

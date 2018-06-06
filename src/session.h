@@ -34,6 +34,9 @@ public:
 
   virtual int Handle(int mask) = 0;
 
+  int Fd() { return fd_; }
+  const char* String() { return address_.String(); }
+  
   Buffer* QueryBuffer() {
     return query_buf_;
   }

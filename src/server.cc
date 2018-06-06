@@ -51,7 +51,7 @@ int Server::Handle(int mask) {
       }
       return kOk;
     }
-    Infof("accpted %s:%d", cip.c_str(), cport);
+
     SetNonBlock(fd, NULL);
     session = config_->factory_->CreateSession(fd, cip, cport, this);
     if (session == NULL) {
@@ -59,6 +59,7 @@ int Server::Handle(int mask) {
       close(fd);
       return kOk;
     }
+    Infof("accept %s for fd %d", session->String(), fd);
     engine_->CreateEvent(fd, kEventRead, session);
     session_map_[fd] = session;
   }
@@ -73,5 +74,19 @@ void Server::Listen() {
   SetNonBlock(fd_, errstr_);
 }
 
-void Server::FreeSession(int fd) {
+void Server::FreeSession(Session *session) {
+  int fd = session->Fd();
+  Event *event = engine_->GetEvent(fd);
+
+  if (event == NULL) {
+    Errorf("no event for fd %d", fd);
+    return;
+  }
+
+  Debugf("close connection from %s", session->String());
+
+  engine_->DeleteEvent(fd, event->mask_);
+  session_map_.erase(fd);
+  delete session;
+  close(fd);
 }

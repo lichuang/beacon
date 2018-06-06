@@ -18,7 +18,7 @@ int RedisSession::Handle(int mask) {
     ret = handleRead();
   }
   if (ret != kOk) {
-    server_->FreeSession(fd_);
+    server_->FreeSession(this);
     return ret;
   }
 
@@ -26,7 +26,7 @@ int RedisSession::Handle(int mask) {
     ret = handleWrite();
   }
   if (ret != kOk) {
-    server_->FreeSession(fd_);
+    server_->FreeSession(this);
     return ret;
   }
 
