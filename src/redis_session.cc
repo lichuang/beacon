@@ -2,10 +2,11 @@
 #include "log.h"
 #include "net.h"
 #include "redis_session.h"
+#include "redis_parser.h"
 #include "server.h"
 
 RedisSession::RedisSession(int fd, const string& ip, int port, Server *server)
-  : Session(fd, ip, port, server) {
+  : Session(fd, ip, port, server), parser_(this) {
 }
 
 RedisSession::~RedisSession() {
@@ -60,6 +61,7 @@ int RedisSession::handleRead() {
   }
 
   Infof("query from %s %s", address_.String(), query_buf_->Start());
+  parser_.Parse();
   return kOk;
 }
 

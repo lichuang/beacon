@@ -185,7 +185,7 @@ int TcpRead(int fd, Buffer* buf) {
       return kError;
     }
 
-    buf->AdvanceRead(n);
+    buf->AdvanceWrite(n);
     nbytes += n;
   } while (n == len);
 

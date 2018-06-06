@@ -29,7 +29,6 @@ bool RedisSimpleStringItem::Parse() {
     case PARSE_SIMPLE_STRING_END:
       end_.buffer_ = buf;
       end_.pos_ = buf->ReadPos();
-      // buf->AdvanceRead(2);
       break;
     }
   }

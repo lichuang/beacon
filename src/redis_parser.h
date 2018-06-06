@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "redis_item.h"
+#include "redis_parser.h"
 
 using namespace std;
 
@@ -21,29 +22,30 @@ enum RedisParserState {
 
 class RedisParser {
 public:
-  RedisParser();
+  RedisParser(RedisSession *session);
   ~RedisParser();
 
-  bool Parse(RedisSession *session);
+  bool Parse();
 
 private:
-  bool parseBegin(RedisCommand *cmd, RedisSession *session);
-  bool parseEnd(RedisCommand *cmd, RedisSession *session);
-  bool parseType(RedisCommand *cmd, RedisSession *session);
-  bool parseItem(RedisCommand *cmd, RedisSession *session);
+  bool parseBegin();
+  bool parseEnd();
+  bool parseType();
+  bool parseItem();
 
   void reset();
 
 private:
-  typedef bool (RedisParser::*stateFun)(RedisCommand*, RedisSession*);
+  typedef bool (RedisParser::*stateFun)();
 
   stateFun state_fun_[PARSE_STATE_NUM];
 
   RedisItem* item_;
+  RedisSession *session_;
+  RedisCommand *cmd_;
 
   int state_;
   int type_;
-  int item_size_;
 };
 
 #endif // __REDIS_PARSER_H__
