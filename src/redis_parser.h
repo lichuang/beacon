@@ -48,4 +48,6 @@ private:
   int type_;
 };
 
+bool ParseType(char c, int *type);
+
 #endif // __REDIS_PARSER_H__

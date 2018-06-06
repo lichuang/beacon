@@ -1,13 +1,17 @@
 #ifndef __REDIS_ITEM_H__
 #define __REDIS_ITEM_H__
 
+#include <vector>
 #include "buffer.h"
+
+using namespace std;
 
 class RedisCommand;
 class RedisSession;
 
 // redis data type
 enum {
+  REDIS_NONE_TYPE,
   REDIS_ARRAY,
   REDIS_STRING,
   REDIS_SIMPLE_STRING,
@@ -17,6 +21,12 @@ enum {
 enum {
   NONE_ITEM_STATE,
 
+  // for array
+  PARSE_ARRAY_BEGIN,
+  PARSE_ARRAY_LENGTH,
+  PARSE_ARRAY_ITEM,
+  PARSE_ARRAY_END,
+
   // for simple string
   PARSE_SIMPLE_STRING_BEGIN,
   PARSE_SIMPLE_STRING_LENGTH,
@@ -25,7 +35,6 @@ enum {
 
 struct RedisItem {
 public:
-
   RedisItem(int type, RedisCommand *cmd, RedisSession *session)
     : type_(type),
       state_(NONE_ITEM_STATE),
@@ -49,6 +58,20 @@ public:
   RedisSession *session_;
 };
 
+struct RedisArrayItem : public RedisItem {
+public:
+  RedisArrayItem(RedisCommand *cmd, RedisSession *session)
+    : RedisItem(REDIS_ARRAY, cmd, session)
+  {}
+
+  virtual ~RedisArrayItem() {}
+  virtual bool Parse();
+
+  int sign_;
+  int item_num_;
+  vector<RedisItem*> array_;
+};
+
 struct RedisSimpleStringItem : public RedisItem {
 public:
   RedisSimpleStringItem(RedisCommand *cmd, RedisSession *session)
@@ -61,5 +84,7 @@ public:
 
   int str_len_;
 };
+
+extern RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisSession *session);
 
 #endif //  __REDIS_ITEM_H__

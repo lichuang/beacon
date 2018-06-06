@@ -5,6 +5,30 @@
 #include "redis_command.h"
 #include "redis_session.h"
 
+bool ParseType(char c, int *type) {
+  switch (c) {
+  case '*':
+    *type = REDIS_ARRAY;
+    break;
+  case '$':
+    *type = REDIS_STRING;
+  case '+':
+    *type = REDIS_SIMPLE_STRING;
+    break;
+  /*    
+  case '\r':
+  case '\n':
+    // pass through \r\n
+    buf->AdvanceRead(1);
+    break;
+  */    
+  default:
+    Errorf("unknown command type: %c", c);
+    return false;
+  }
+  return true;
+}
+
 RedisParser::RedisParser(RedisSession *session)
   : session_(session), cmd_(NULL) {
   state_fun_[PARSE_BEGIN] = &RedisParser::parseBegin;
@@ -33,6 +57,7 @@ void RedisParser::reset() {
   state_ = PARSE_BEGIN;
   cmd_   = NULL;
   item_  = NULL;
+  type_  = REDIS_NONE_TYPE;
 }
 
 bool RedisParser::parseBegin() {
@@ -45,15 +70,7 @@ bool RedisParser::parseBegin() {
 }
 
 bool RedisParser::parseItem() {
-  switch (type_) {
-  case REDIS_SIMPLE_STRING:
-    item_ = new RedisSimpleStringItem(cmd_, session_);
-    break;
-  default:
-    break;
-  }
-
-  Debugf("in parse item state");
+  item_ = newRedisItem(type_, cmd_, session_);
   state_ = PARSE_END;
   return item_->Parse();
 }
@@ -72,30 +89,9 @@ bool RedisParser::parseType() {
   Buffer *buf = session_->QueryBuffer();
   char t = *(buf->NextRead());
 
-  while (state_ == PARSE_TYPE) {
-    switch (t) {
-    case '*':
-      type_ = REDIS_ARRAY;
-      state_ = PARSE_ITEM;
-      break;
-    case '$':
-      type_ = REDIS_STRING;
-      state_ = PARSE_ITEM;
-    case '+':
-      type_ = REDIS_SIMPLE_STRING;
-      state_ = PARSE_ITEM;
-      break;
-    case '\r':
-    case '\n':
-      // pass through \r\n
-      buf->AdvanceRead(1);
-      break;
-    default:
-      Errorf("unknown command type: %c", t);
-      break;
-    }
+  if (!ParseType(t, &type_)) {
+    return false;
   }
-
   buf->AdvanceRead(1);
   return true;
 }
