@@ -29,6 +29,7 @@ int Server::Run() {
     Fatalf("create listen event error:%d", ret);
   }
 
+  Infof("serve at %d", config_->port_);
   engine_->Main();
 
   return kOk;
@@ -47,19 +48,19 @@ int Server::Handle(int mask) {
     if (fd < 0) {
       if (errno != EWOULDBLOCK) {
         Errorf("accepting client connection: %s", errstr_);
-        return kOk;
       }
-      Infof("accpted %s:%d", cip.c_str(), cport);
-      SetNonBlock(fd, NULL);
-      session = config_->factory_->CreateSession(fd, cip, cport, this);
-      if (session == NULL) {
-        Errorf("new session fail, close connection from %s:%d", cip.c_str(), cport);
-        close(fd);
-        return kOk;
-      }
-      engine_->CreateEvent(fd, kEventRead, session);
-      session_map_[fd] = session;
+      return kOk;
     }
+    Infof("accpted %s:%d", cip.c_str(), cport);
+    SetNonBlock(fd, NULL);
+    session = config_->factory_->CreateSession(fd, cip, cport, this);
+    if (session == NULL) {
+      Errorf("new session fail, close connection from %s:%d", cip.c_str(), cport);
+      close(fd);
+      return kOk;
+    }
+    engine_->CreateEvent(fd, kEventRead, session);
+    session_map_[fd] = session;
   }
   return kOk;
 }

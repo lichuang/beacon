@@ -3,6 +3,9 @@
 
 #include "buffer.h"
 
+class RedisCommand;
+class RedisSession;
+
 // redis data type
 enum {
   REDIS_ARRAY,
@@ -22,30 +25,41 @@ enum {
 
 struct RedisItem {
 public:
-  int type_;
-  int state_;
 
-  RedisItem(int type)
+  RedisItem(int type, RedisCommand *cmd, RedisSession *session)
     : type_(type),
-      state_(NONE_ITEM_STATE) {
+      state_(NONE_ITEM_STATE),
+      len_(0),
+      cmd_(cmd),
+      session_(session) {
   }
 
   virtual ~RedisItem() {}
 
+  virtual bool Parse() = 0;
+
+  int type_;
+  int state_;
+
   int len_;
   BufferPos start_;
   BufferPos end_;
+
+  RedisCommand *cmd_;
+  RedisSession *session_;
 };
 
 struct RedisSimpleStringItem : public RedisItem {
 public:
-  RedisSimpleStringItem()
-    : RedisItem(REDIS_SIMPLE_STRING),
-      len_(0) {}
+  RedisSimpleStringItem(RedisCommand *cmd, RedisSession *session)
+    : RedisItem(REDIS_SIMPLE_STRING, cmd, session), str_len_(0)
+  {}
 
   virtual ~RedisSimpleStringItem() {}
 
-  int len_;
+  virtual bool Parse();
+
+  int str_len_;
 };
 
 #endif //  __REDIS_ITEM_H__

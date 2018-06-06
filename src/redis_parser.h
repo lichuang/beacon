@@ -14,9 +14,7 @@ class RedisCommand;
 enum RedisParserState {
   PARSE_BEGIN,
   PARSE_TYPE,
-  PARSE_ARRAY,
-  PARSE_STRING,
-  PARSE_SIMPLE_STRING,
+  PARSE_ITEM,
   PARSE_END,
   PARSE_STATE_NUM
 };
@@ -32,10 +30,7 @@ private:
   bool parseBegin(RedisCommand *cmd, RedisSession *session);
   bool parseEnd(RedisCommand *cmd, RedisSession *session);
   bool parseType(RedisCommand *cmd, RedisSession *session);
-  bool parseSimpleString(RedisCommand *cmd, RedisSession* session);
-
-  RedisItem* newItem(int type);
-  RedisItem* nextItem();
+  bool parseItem(RedisCommand *cmd, RedisSession *session);
 
   void reset();
 
@@ -44,8 +39,7 @@ private:
 
   stateFun state_fun_[PARSE_STATE_NUM];
 
-  vector<RedisItem*> items_;
-  int item_index_;
+  RedisItem* item_;
 
   int state_;
   int type_;

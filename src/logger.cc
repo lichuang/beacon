@@ -79,7 +79,7 @@ void Logger::Log(int level, const char* file, int line, const char *format, ...)
                       format, args);
   buf[n] = '\0';
 
-  printf("%s", buf);
+  printf("%s\n", buf);
 
   if (level == kFatalLogLevel) {
     abort();

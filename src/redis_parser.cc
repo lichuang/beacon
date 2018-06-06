@@ -5,31 +5,14 @@
 #include "redis_command.h"
 #include "redis_session.h"
 
-RedisParser::RedisParser()
-  : item_index_(0) {
+RedisParser::RedisParser() {
   state_fun_[PARSE_BEGIN] = &RedisParser::parseBegin;
+  state_fun_[PARSE_TYPE]  = &RedisParser::parseType;
+  state_fun_[PARSE_ITEM]  = &RedisParser::parseItem;
+  state_fun_[PARSE_END]   = &RedisParser::parseEnd;
 }
 
 RedisParser::~RedisParser() {
-}
-
-RedisItem* RedisParser::newItem(int type) {
-  RedisItem *item;
-  
-  switch (type) {
-  case REDIS_SIMPLE_STRING:
-    item = new RedisSimpleStringItem();
-    break;
-  default:
-    break;
-  }
-
-  items_.push_back(item);
-  return item;
-}
-
-RedisItem* RedisParser::nextItem() {
-  return items_[item_index_++];
 }
 
 bool RedisParser::Parse(RedisSession *session) {
@@ -59,6 +42,18 @@ bool RedisParser::parseBegin(RedisCommand *cmd, RedisSession *session) {
   return true;
 }
 
+bool RedisParser::parseItem(RedisCommand *cmd, RedisSession *session) {
+  switch (type_) {
+  case REDIS_SIMPLE_STRING:
+    item_ = new RedisSimpleStringItem(cmd, session);
+    break;
+  default:
+    break;
+  }
+
+  return item_->Parse();
+}
+
 bool RedisParser::parseEnd(RedisCommand *cmd, RedisSession *session) {
   Buffer *buf = session->QueryBuffer();
   cmd->End(buf, buf->ReadPos());
@@ -77,16 +72,13 @@ bool RedisParser::parseType(RedisCommand *cmd, RedisSession *session) {
     switch (t) {
     case '*':
       type_ = REDIS_ARRAY;
-      state_ = PARSE_ARRAY;
       item_size_ = 0;
       break;
     case '$':
       type_ = REDIS_STRING;
-      state_ = PARSE_STRING;
       item_size_ = 0;
     case '+':
       type_ = REDIS_SIMPLE_STRING;
-      state_ = PARSE_SIMPLE_STRING;
       break;
     case '\r':
     case '\n':
@@ -99,47 +91,7 @@ bool RedisParser::parseType(RedisCommand *cmd, RedisSession *session) {
     }
   }
 
-  newItem(type_);
+  state_ = PARSE_ITEM;
   buf->AdvanceRead(1);
-  return true;
-}
-
-bool RedisParser::parseSimpleString(RedisCommand *cmd, RedisSession *session) {
-  char c;
-  int  state;
-  Buffer *buf;
-  RedisSimpleStringItem* item = (RedisSimpleStringItem*)nextItem();
-
-  UNUSED(cmd);
-
-  item->state_ = PARSE_SIMPLE_STRING_BEGIN;
-
-  while (session->hasUnprocessedQueryData()) {
-    buf = session->QueryBuffer();
-    state = item->state_;
-    switch (state) {
-    case PARSE_SIMPLE_STRING_BEGIN:
-      item->state_ = PARSE_SIMPLE_STRING_LENGTH;
-      item->start_.buffer_ = buf;
-      item->start_.pos_ = buf->ReadPos();
-      break;
-    case PARSE_SIMPLE_STRING_LENGTH:
-      c = *(buf->NextRead());
-      if (c == '\r') {
-        item->state_ = PARSE_SIMPLE_STRING_END;
-      } else {
-        item->len_ += 1;
-        buf->AdvanceRead(1);
-      }
-
-      break;
-    case PARSE_SIMPLE_STRING_END:
-      item->end_.buffer_ = buf;
-      item->end_.pos_ = buf->ReadPos();
-      // buf->AdvanceRead(2);
-      break;
-    }
-  }
-
   return true;
 }
