@@ -7,7 +7,6 @@
 #include "common.h"
 #include "errcode.h"
 #include "engine.h"
-#include "event.h"
 #include "log.h"
 #include "net.h"
 #include "server.h"
@@ -30,7 +29,6 @@ int Server::Run() {
     Fatalf("create listen event error:%d", ret);
   }
 
-  Infof("Server listening at 0.0.0:%d", config_->port_);
   engine_->Main();
 
   return kOk;
@@ -49,19 +47,19 @@ int Server::Handle(int mask) {
     if (fd < 0) {
       if (errno != EWOULDBLOCK) {
         Errorf("accepting client connection: %s", errstr_);
+        return kOk;
       }
-      return kOk;
+      Infof("accpted %s:%d", cip.c_str(), cport);
+      SetNonBlock(fd, NULL);
+      session = config_->factory_->CreateSession(fd, cip, cport, this);
+      if (session == NULL) {
+        Errorf("new session fail, close connection from %s:%d", cip.c_str(), cport);
+        close(fd);
+        return kOk;
+      }
+      engine_->CreateEvent(fd, kEventRead, session);
+      session_map_[fd] = session;
     }
-    SetNonBlock(fd, NULL);
-    session = config_->factory_->CreateSession(fd, cip, cport, this);
-    if (session == NULL) {
-      Errorf("new session fail, close connection from %s:%d", cip.c_str(), cport);
-      close(fd);
-      return kOk;
-    }
-    Infof("accept %s for fd %d", session->String(), fd);
-    engine_->CreateEvent(fd, kEventRead, session);
-    session_map_[fd] = session;
   }
   return kOk;
 }
@@ -74,19 +72,5 @@ void Server::Listen() {
   SetNonBlock(fd_, errstr_);
 }
 
-void Server::FreeSession(Session *session) {
-  int fd = session->Fd();
-  Event *event = engine_->GetEvent(fd);
-
-  if (event == NULL) {
-    Errorf("no event for fd %d", fd);
-    return;
-  }
-
-  Debugf("close connection from %s", session->String());
-
-  engine_->DeleteEvent(fd, event->mask_);
-  session_map_.erase(fd);
-  delete session;
-  close(fd);
+void Server::FreeSession(int fd) {
 }

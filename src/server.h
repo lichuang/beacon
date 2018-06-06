@@ -21,7 +21,7 @@ public:
   int Run();
   virtual int Handle(int mask);
 
-  void FreeSession(Session *);
+  void FreeSession(int fd);
 private:
   void Listen();
 

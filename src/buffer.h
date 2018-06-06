@@ -34,11 +34,31 @@ public:
 
   void  Reserve(int addlen);
 
+  void IncrCnt() {
+    ++ref_cnt_;
+  }
+  void DescCnt() {
+    --ref_cnt_;
+  }
+  int  RefCnt() {
+    return ref_cnt_;
+  }
+
+  int ReadPos() {
+    return read_pos_;
+  }
+
 private:
   vector<char> buf_;
   int write_pos_;
   int read_pos_;
   int init_size_;
+  int ref_cnt_;
+};
+
+struct BufferPos {
+  Buffer *buffer_;
+  int     pos_;
 };
 
 #endif // __BUFFER_H__

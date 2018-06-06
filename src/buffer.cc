@@ -3,7 +3,8 @@
 Buffer::Buffer(int size)
   : write_pos_(0),
     read_pos_(0),
-    init_size_(size) {
+    init_size_(size),
+    ref_cnt_(0) {
   buf_.reserve(size);
 }
 
@@ -41,4 +42,5 @@ void Buffer::Reset() {
   vector<char>(buf_).swap(buf_);
   buf_.reserve(init_size_);
   write_pos_ = read_pos_ = 0;
+  ref_cnt_ = 0;
 }

@@ -1,7 +1,11 @@
 #ifndef __REDIS_SESSION_H__
 #define __REDIS_SESSION_H__
 
+#include <list>
+#include "net.h"
+#include "redis_command.h"
 #include "session.h"
+#include "redis_parser.h"
 
 class RedisSession;
 
@@ -11,9 +15,18 @@ public:
   virtual ~RedisSession();
 
   virtual int Handle(int mask);
+
+  RedisCommand* getFreeCommand();
+  void          addWaitingCommand(RedisCommand *);
+
 private:
   int handleRead();
   int handleWrite();
+
+private:
+  RedisParser parser_;
+  list<RedisCommand*> free_commands_;
+  list<RedisCommand*> waiting_commands_;
 };
 
 class RedisSessionFactory : public SessionFactory {
