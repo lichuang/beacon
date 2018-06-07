@@ -59,12 +59,20 @@ public:
 
   virtual bool Parse() = 0;
 
+  void markStartPos(Buffer* buf) {
+    buffer_pos_.buffer_ = buf;
+    buffer_pos_.start_ = buf->ReadPos();
+  }
+
+  void markEndPos(Buffer* buf) {
+    buffer_pos_.end_ = buf->ReadPos();
+  }
+
   int type_;
   int state_;
 
   int len_;
-  BufferPos start_;
-  BufferPos end_;
+  BufferPos buffer_pos_;
 
   RedisCommand *cmd_;
   RedisSession *session_;

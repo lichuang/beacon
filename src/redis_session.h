@@ -18,6 +18,9 @@ public:
 
   RedisCommand* getFreeCommand();
   void          addWaitingCommand(RedisCommand *);
+  list<RedisCommand*>* getWaintingCommands() {
+    return &waiting_commands_;
+  }
 
 private:
   int handleRead();

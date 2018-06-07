@@ -9,11 +9,10 @@ public:
   ~RedisCommand();
 
   void Init(Buffer *buf, int start);
-  void End(Buffer *buf, int end);
+  void End(int end);
 
 private:
-  BufferPos start_;
-  BufferPos end_;
+  BufferPos buffer_pos_;
 };
 
 #endif // __REDIS_COMMAND_H__

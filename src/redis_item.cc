@@ -113,8 +113,7 @@ bool RedisStringItem::Parse() {
         return false;
       }
       state_ = PARSE_STRING_LENGTH;
-      start_.buffer_ = buf;
-      start_.pos_ = buf->ReadPos();
+      markStartPos(buf);
       buf->AdvanceRead(1);
       break;
     case PARSE_STRING_LENGTH:
@@ -131,8 +130,7 @@ bool RedisStringItem::Parse() {
       if (c != '\n') {
         state_ = PARSE_STRING_LENGTH;
       } else {
-        end_.buffer_ = buf;
-        end_.pos_ = buf->ReadPos();
+        markEndPos(buf);
         buf->AdvanceRead(1);
         return true;
       }
@@ -157,8 +155,7 @@ bool RedisBulkItem::Parse() {
         return false;
       }
       state_ = PARSE_BULK_LENGTH;
-      start_.buffer_ = buf;
-      start_.pos_ = buf->ReadPos();
+      markStartPos(buf);
       len_ = 0; 
       buf->AdvanceRead(1);
       break;
@@ -180,12 +177,11 @@ bool RedisBulkItem::Parse() {
         return false;
       }
       buf->AdvanceRead(len_);
-      end_.buffer_ = buf;
-      end_.pos_ = buf->ReadPos();
       state_ = PARSE_BULK_END;
       break;
     case PARSE_BULK_END:
       buf->AdvanceRead(1);
+      markEndPos(buf);
       buf->AdvanceRead(1);
       return true;
       break;
@@ -209,8 +205,7 @@ bool RedisIntItem::Parse() {
         return false;
       }
       state_ = PARSE_INT_NUMBER;
-      start_.buffer_ = buf;
-      start_.pos_ = buf->ReadPos();
+      markStartPos(buf);
       buf->AdvanceRead(1);
       break;
     case PARSE_INT_NUMBER:
@@ -221,6 +216,7 @@ bool RedisIntItem::Parse() {
         if (*buf->NextRead() != '\n') {
           return false;
         }
+        markEndPos(buf);
         return true;
       } else if (!isdigit(c)) { 
         return false;

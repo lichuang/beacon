@@ -7,12 +7,14 @@
 #include "redis_session.h"
 
 bool ParseType(char c, int *type) {
+  *type = REDIS_NONE_TYPE;
   switch (c) {
   case kRedisArrayPrefix:
     *type = REDIS_ARRAY;
     break;
   case kRedisStringPrefix:
     *type = REDIS_STRING;
+    break;
   case kRedisBulkPrefix:
     *type = REDIS_BULK;
     break;
@@ -29,7 +31,6 @@ bool ParseType(char c, int *type) {
 RedisParser::RedisParser(RedisSession *session)
   : session_(session), cmd_(NULL) {
   state_fun_[PARSE_BEGIN] = &RedisParser::parseBegin;
-  state_fun_[PARSE_TYPE]  = &RedisParser::parseType;
   state_fun_[PARSE_ITEM]  = &RedisParser::parseItem;
   state_fun_[PARSE_END]   = &RedisParser::parseEnd;
   reset();
@@ -40,7 +41,8 @@ RedisParser::~RedisParser() {
 
 bool RedisParser::Parse() {
   while (session_->hasUnprocessedQueryData() > 0) {
-    while (state_ <= PARSE_END) {
+    parse_cmd_done_ = false;
+    while (!parse_cmd_done_) {
       if (!(this->*state_fun_[state_])()) {
         return false;
       }
@@ -60,8 +62,7 @@ bool RedisParser::parseBegin() {
   Buffer *buf = session_->QueryBuffer();
   cmd_ = session_->getFreeCommand();
   cmd_->Init(buf, buf->ReadPos());
-  state_ = PARSE_TYPE;
-  Debugf("in parse begin state");
+  state_ = PARSE_ITEM;
   return true;
 }
 
@@ -79,8 +80,10 @@ bool RedisParser::parseItem() {
 
 bool RedisParser::parseEnd() {
   Buffer *buf = session_->QueryBuffer();
-  cmd_->End(buf, buf->ReadPos());
+  cmd_->End(buf->ReadPos());
   session_->addWaitingCommand(cmd_);
+  cmd_ = NULL;
+  parse_cmd_done_ = true;
 
   reset();
 

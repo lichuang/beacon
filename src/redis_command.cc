@@ -7,11 +7,10 @@ RedisCommand::~RedisCommand() {
 }
 
 void RedisCommand::Init(Buffer *buf, int start) {
-  start_.buffer_ = buf;
-  start_.pos_    = start;
+  buffer_pos_.buffer_ = buf;
+  buffer_pos_.start_    = start;
 }
 
-void RedisCommand::End(Buffer *buf, int start) {
-  end_.buffer_ = buf;
-  end_.pos_    = start;
+void RedisCommand::End(int end) {
+  buffer_pos_.end_    = end;
 }

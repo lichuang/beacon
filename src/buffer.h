@@ -1,6 +1,7 @@
 #ifndef __BUFFER_H__
 #define __BUFFER_H__
 
+#include <stdio.h>
 #include <vector>
 
 using namespace std;
@@ -58,7 +59,10 @@ private:
 
 struct BufferPos {
   Buffer *buffer_;
-  int     pos_;
+  int     start_, end_;
+
+  BufferPos()
+    : buffer_(NULL), start_(0), end_(0) {}
 };
 
 #endif // __BUFFER_H__

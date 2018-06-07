@@ -44,6 +44,7 @@ private:
 
   int state_;
   int type_;
+  bool parse_cmd_done_;
 };
 
 bool ParseType(char c, int *type);

@@ -39,4 +39,4 @@ rebuild:
 	make
 
 clean:
-	rm -rf  $(OBJ_DIR)/* $(BIN_DIR)/*
+	rm -rf  $(OBJ_DIR)/* $(BIN_DIR)/* $(TEST_DIR)/*.o
