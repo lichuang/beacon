@@ -1,4 +1,5 @@
 #include "buffer.h"
+#include "const.h"
 #include "common.h"
 #include "log.h"
 #include "redis_parser.h"
@@ -7,21 +8,17 @@
 
 bool ParseType(char c, int *type) {
   switch (c) {
-  case '*':
+  case kRedisArrayPrefix:
     *type = REDIS_ARRAY;
     break;
-  case '$':
+  case kRedisStringPrefix:
     *type = REDIS_STRING;
-  case '+':
-    *type = REDIS_SIMPLE_STRING;
+  case kRedisBulkPrefix:
+    *type = REDIS_BULK;
     break;
-  /*    
-  case '\r':
-  case '\n':
-    // pass through \r\n
-    buf->AdvanceRead(1);
+  case kRedisIntPrefix:
+    *type = REDIS_INT;
     break;
-  */    
   default:
     Errorf("unknown command type: %c", c);
     return false;
@@ -43,7 +40,6 @@ RedisParser::~RedisParser() {
 
 bool RedisParser::Parse() {
   while (session_->hasUnprocessedQueryData() > 0) {
-    
     while (state_ <= PARSE_END) {
       if (!(this->*state_fun_[state_])()) {
         return false;
@@ -70,6 +66,12 @@ bool RedisParser::parseBegin() {
 }
 
 bool RedisParser::parseItem() {
+  Buffer *buf = session_->QueryBuffer();
+  char t = *(buf->NextRead());
+
+  if (!ParseType(t, &type_)) {
+    return false;
+  }
   item_ = newRedisItem(type_, cmd_, session_);
   state_ = PARSE_END;
   return item_->Parse();
@@ -82,16 +84,5 @@ bool RedisParser::parseEnd() {
 
   reset();
 
-  return true;
-}
-
-bool RedisParser::parseType() {
-  Buffer *buf = session_->QueryBuffer();
-  char t = *(buf->NextRead());
-
-  if (!ParseType(t, &type_)) {
-    return false;
-  }
-  buf->AdvanceRead(1);
   return true;
 }

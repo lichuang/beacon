@@ -13,4 +13,13 @@ const int kQueryBufferLen = 16 * 1024;
 // client address buffer length
 const int kAddressLen = 20;
 
+// redis data type prefix
+enum {
+  kRedisStringPrefix = '+',
+  kRedisErrorPrefix  = '-',
+  kRedisIntPrefix    = ':',
+  kRedisBulkPrefix   = '$',
+  kRedisArrayPrefix  = '*',
+};
+
 #endif // __CONST_H__

@@ -13,8 +13,9 @@ class RedisSession;
 enum {
   REDIS_NONE_TYPE,
   REDIS_ARRAY,
+  REDIS_BULK,
   REDIS_STRING,
-  REDIS_SIMPLE_STRING,
+  REDIS_INT,
 };
 
 // item statemachine type
@@ -27,10 +28,21 @@ enum {
   PARSE_ARRAY_ITEM,
   PARSE_ARRAY_END,
 
-  // for simple string
-  PARSE_SIMPLE_STRING_BEGIN,
-  PARSE_SIMPLE_STRING_LENGTH,
-  PARSE_SIMPLE_STRING_END,
+  // for string
+  PARSE_STRING_BEGIN,
+  PARSE_STRING_LENGTH,
+  PARSE_STRING_END,
+
+  // for bulk
+  PARSE_BULK_BEGIN,
+  PARSE_BULK_LENGTH,
+  PARSE_BULK_CONTENT,
+  PARSE_BULK_END,
+
+  // for int
+  PARSE_INT_BEGIN,
+  PARSE_INT_NUMBER,
+  PARSE_INT_END,
 };
 
 struct RedisItem {
@@ -72,17 +84,41 @@ public:
   vector<RedisItem*> array_;
 };
 
-struct RedisSimpleStringItem : public RedisItem {
+struct RedisStringItem : public RedisItem {
 public:
-  RedisSimpleStringItem(RedisCommand *cmd, RedisSession *session)
-    : RedisItem(REDIS_SIMPLE_STRING, cmd, session), str_len_(0)
+  RedisStringItem(RedisCommand *cmd, RedisSession *session)
+    : RedisItem(REDIS_STRING, cmd, session), str_len_(0)
   {}
 
-  virtual ~RedisSimpleStringItem() {}
+  virtual ~RedisStringItem() {}
 
   virtual bool Parse();
 
   int str_len_;
+};
+
+struct RedisBulkItem : public RedisItem {
+public:
+  RedisBulkItem(RedisCommand *cmd, RedisSession *session)
+    : RedisItem(REDIS_BULK, cmd, session)
+  {}
+
+  virtual ~RedisBulkItem() {}
+
+  virtual bool Parse();
+
+  int len_;
+};
+
+struct RedisIntItem : public RedisItem {
+public:
+  RedisIntItem(RedisCommand *cmd, RedisSession *session)
+    : RedisItem(REDIS_INT, cmd, session)
+  {}
+
+  virtual ~RedisIntItem() {}
+
+  virtual bool Parse();
 };
 
 extern RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisSession *session);

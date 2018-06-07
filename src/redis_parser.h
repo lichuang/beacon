@@ -14,7 +14,6 @@ class RedisCommand;
 // parser statemachine type
 enum RedisParserState {
   PARSE_BEGIN,
-  PARSE_TYPE,
   PARSE_ITEM,
   PARSE_END,
   PARSE_STATE_NUM
@@ -29,9 +28,8 @@ public:
 
 private:
   bool parseBegin();
-  bool parseEnd();
-  bool parseType();
   bool parseItem();
+  bool parseEnd();
 
   void reset();
 
