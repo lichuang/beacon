@@ -8,7 +8,7 @@
 using namespace std;
 
 class Buffer;
-class RedisSession;
+class RedisInfo;
 class RedisCommand;
 
 // parser statemachine type
@@ -21,7 +21,7 @@ enum RedisParserState {
 
 class RedisParser {
 public:
-  RedisParser(RedisSession *session);
+  RedisParser(RedisInfo *info);
   ~RedisParser();
 
   bool Parse();
@@ -39,7 +39,7 @@ private:
   stateFun state_fun_[PARSE_STATE_NUM];
 
   RedisItem* item_;
-  RedisSession *session_;
+  RedisInfo *info_;
   RedisCommand *cmd_;
 
   int state_;

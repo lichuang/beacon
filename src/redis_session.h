@@ -5,7 +5,7 @@
 #include "net.h"
 #include "redis_command.h"
 #include "session.h"
-#include "redis_parser.h"
+#include "redis_info.h"
 
 class Server;
 
@@ -16,16 +16,14 @@ public:
 
   virtual int Handle(int mask);
 
-  RedisCommand* getFreeCommand();
-  void          addWaitingCommand(RedisCommand *);
+  void addWaitingCommand(RedisCommand *);
 
 private:
   int handleRead();
   int handleWrite();
 
 private:
-  RedisParser parser_;
-  list<RedisCommand*> free_commands_;
+  RedisInfo info_;
 };
 
 class RedisSessionFactory : public SessionFactory {

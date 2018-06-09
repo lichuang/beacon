@@ -7,7 +7,7 @@
 using namespace std;
 
 class RedisCommand;
-class RedisSession;
+class RedisInfo;
 
 // redis data type
 enum {
@@ -47,12 +47,12 @@ enum {
 
 struct RedisItem {
 public:
-  RedisItem(int type, RedisCommand *cmd, RedisSession *session)
+  RedisItem(int type, RedisCommand *cmd, RedisInfo *info)
     : type_(type),
       state_(NONE_ITEM_STATE),
       len_(0),
       cmd_(cmd),
-      session_(session) {
+      info_(info) {
   }
 
   virtual ~RedisItem() {}
@@ -76,13 +76,13 @@ public:
   BufferPos start_, end_;
 
   RedisCommand *cmd_;
-  RedisSession *session_;
+  RedisInfo *info_;
 };
 
 struct RedisArrayItem : public RedisItem {
 public:
-  RedisArrayItem(RedisCommand *cmd, RedisSession *session)
-    : RedisItem(REDIS_ARRAY, cmd, session)
+  RedisArrayItem(RedisCommand *cmd, RedisInfo *info)
+    : RedisItem(REDIS_ARRAY, cmd, info)
   {}
 
   virtual ~RedisArrayItem() {}
@@ -95,8 +95,8 @@ public:
 
 struct RedisStringItem : public RedisItem {
 public:
-  RedisStringItem(RedisCommand *cmd, RedisSession *session)
-    : RedisItem(REDIS_STRING, cmd, session), str_len_(0)
+  RedisStringItem(RedisCommand *cmd, RedisInfo *info)
+    : RedisItem(REDIS_STRING, cmd, info), str_len_(0)
   {}
 
   virtual ~RedisStringItem() {}
@@ -108,8 +108,8 @@ public:
 
 struct RedisBulkItem : public RedisItem {
 public:
-  RedisBulkItem(RedisCommand *cmd, RedisSession *session)
-    : RedisItem(REDIS_BULK, cmd, session)
+  RedisBulkItem(RedisCommand *cmd, RedisInfo *info)
+    : RedisItem(REDIS_BULK, cmd, info)
   {}
 
   virtual ~RedisBulkItem() {}
@@ -121,8 +121,8 @@ public:
 
 struct RedisIntItem : public RedisItem {
 public:
-  RedisIntItem(RedisCommand *cmd, RedisSession *session)
-    : RedisItem(REDIS_INT, cmd, session)
+  RedisIntItem(RedisCommand *cmd, RedisInfo *info)
+    : RedisItem(REDIS_INT, cmd, info)
   {}
 
   virtual ~RedisIntItem() {}
@@ -130,6 +130,6 @@ public:
   virtual bool Parse();
 };
 
-extern RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisSession *session);
+extern RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisInfo *info);
 
 #endif //  __REDIS_ITEM_H__

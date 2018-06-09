@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <ctype.h>
+#include "const.h"
 #include "redis_item.h"
 #include "redis_command.h"
 #include "redis_parser.h"
-#include "redis_session.h"
+#include "redis_info.h"
 
 static bool toNumber(char c, int *v) {
   if (!isdigit(c)) {
@@ -13,16 +14,16 @@ static bool toNumber(char c, int *v) {
   return true;
 }
 
-RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisSession *session) {
+RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisInfo *info) {
   switch (type) {
   case REDIS_ARRAY:
-    return new RedisArrayItem(cmd, session);
+    return new RedisArrayItem(cmd, info);
   case REDIS_STRING:
-    return new RedisStringItem(cmd, session);
+    return new RedisStringItem(cmd, info);
   case REDIS_BULK:
-    return new RedisBulkItem(cmd, session);
+    return new RedisBulkItem(cmd, info);
   case REDIS_INT:
-    return new RedisIntItem(cmd, session);
+    return new RedisIntItem(cmd, info);
   default:
     break;
   }
@@ -38,8 +39,8 @@ bool RedisArrayItem::Parse() {
 
   state_ = PARSE_ARRAY_BEGIN;
 
-  while (session_->hasUnprocessedQueryData()) {
-    buf = session_->QueryBuffer();
+  while (info_->hasUnprocessedQueryData()) {
+    buf = info_->QueryBuffer();
     switch (state_) {
     case PARSE_ARRAY_BEGIN:
       if (*(buf->NextRead()) != kRedisArrayPrefix) {
@@ -82,7 +83,7 @@ bool RedisArrayItem::Parse() {
           if (!ParseType(c, &type)) {
             return false;
           }
-          item = newRedisItem(type, cmd_, session_);
+          item = newRedisItem(type, cmd_, info_);
           array_.push_back(item);
           if (!item->Parse()) {
             return false;
@@ -105,8 +106,8 @@ bool RedisStringItem::Parse() {
 
   state_ = PARSE_STRING_BEGIN;
 
-  while (session_->hasUnprocessedQueryData()) {
-    buf = session_->QueryBuffer();
+  while (info_->hasUnprocessedQueryData()) {
+    buf = info_->QueryBuffer();
     switch (state_) {
     case PARSE_STRING_BEGIN:
       if (*(buf->NextRead()) != kRedisStringPrefix) {
@@ -147,8 +148,8 @@ bool RedisBulkItem::Parse() {
 
   state_ = PARSE_BULK_BEGIN;
 
-  while (session_->hasUnprocessedQueryData()) {
-    buf = session_->QueryBuffer();
+  while (info_->hasUnprocessedQueryData()) {
+    buf = info_->QueryBuffer();
     switch (state_) {
     case PARSE_BULK_BEGIN:
       if (*(buf->NextRead()) != kRedisBulkPrefix) {
@@ -197,8 +198,8 @@ bool RedisIntItem::Parse() {
 
   state_ = PARSE_INT_BEGIN;
 
-  while (session_->hasUnprocessedQueryData()) {
-    buf = session_->QueryBuffer();
+  while (info_->hasUnprocessedQueryData()) {
+    buf = info_->QueryBuffer();
     switch (state_) {
     case PARSE_INT_BEGIN:
       if (*(buf->NextRead()) != kRedisIntPrefix) {
