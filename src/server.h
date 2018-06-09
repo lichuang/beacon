@@ -22,6 +22,9 @@ public:
   virtual int Handle(int mask);
 
   void FreeSession(Session *);
+  Engine* GetEngine() {
+    return engine_;
+  }
 private:
   void Listen();
 

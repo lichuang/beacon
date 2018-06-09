@@ -8,6 +8,7 @@
 using namespace std;
 
 class Buffer;
+struct BufferPos;
 
 struct Address {
   string ip_;
@@ -25,11 +26,31 @@ struct Address {
   const char* String() const {
     return str_.c_str();
   }
+
+  Address& operator=(const Address &address) {
+    if (&address != this) {
+      this->ip_ = address.ip_;
+      this->port_ = address.port_;
+    }
+
+    return *this;
+  }
+
+  bool operator< (const Address &address) {
+    if (address.ip_ != ip_) {
+      return ip_ < address.ip_;
+    }
+
+    return port_ < address.port_;
+  }
 };
 
 int CreateTcpServer(int port, const char* addr, int backlog, char* err);
+int CreateTcpSocket();
 int TcpAccept(int sfd, string *cip, int *port, char* err);
 int SetNonBlock(int fd, char *err);
 int TcpRead(int fd, Buffer* buf);
+int TcpSend(int fd, BufferPos* bufpos);
+int TcpConnect(int fd, const char *addr, int port);
 
 #endif // __NET_H__

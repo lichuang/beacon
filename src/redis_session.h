@@ -7,7 +7,7 @@
 #include "session.h"
 #include "redis_parser.h"
 
-class RedisSession;
+class Server;
 
 class RedisSession : public Session {
 public:
@@ -18,9 +18,6 @@ public:
 
   RedisCommand* getFreeCommand();
   void          addWaitingCommand(RedisCommand *);
-  list<RedisCommand*>* getWaintingCommands() {
-    return &waiting_commands_;
-  }
 
 private:
   int handleRead();
@@ -29,7 +26,6 @@ private:
 private:
   RedisParser parser_;
   list<RedisCommand*> free_commands_;
-  list<RedisCommand*> waiting_commands_;
 };
 
 class RedisSessionFactory : public SessionFactory {

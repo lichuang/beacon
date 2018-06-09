@@ -4,7 +4,8 @@ Buffer::Buffer(int size)
   : write_pos_(0),
     read_pos_(0),
     init_size_(size),
-    ref_cnt_(0) {
+    ref_cnt_(0),
+    next_(NULL) {
   buf_.reserve(size);
 }
 

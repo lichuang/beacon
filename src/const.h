@@ -22,4 +22,11 @@ enum {
   kRedisArrayPrefix  = '*',
 };
 
+// tcp connect status
+enum {
+  kConnected,
+  kConnecting,
+  kDisconnected,
+};
+
 #endif // __CONST_H__

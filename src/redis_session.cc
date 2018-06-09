@@ -3,16 +3,18 @@
 #include "net.h"
 #include "redis_session.h"
 #include "redis_parser.h"
+#include "redis_server.h"
 #include "server.h"
 
 RedisSession::RedisSession(int fd, const string& ip, int port, Server *server)
-  : Session(fd, ip, port, server), parser_(this) {
+  : Session(fd, Address(ip, port), server), parser_(this) {
 }
 
 RedisSession::~RedisSession() {
 }
 
 int RedisSession::Handle(int mask) {
+  Debugf("%s mask %d", String(), mask);
   int ret = kOk;
 
   if (mask & kEventRead) {
@@ -48,7 +50,9 @@ RedisCommand* RedisSession::getFreeCommand() {
 }
 
 void RedisSession::addWaitingCommand(RedisCommand *cmd) {
-  waiting_commands_.push_back(cmd);
+  //waiting_commands_.push_back(cmd);
+  RedisServer *server = CreateServer(Address("127.0.0.1", 6379), this);
+  server->addQueryCommand(cmd);
 }
 
 int RedisSession::handleRead() {

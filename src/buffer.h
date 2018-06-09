@@ -48,21 +48,33 @@ public:
   int ReadPos() {
     return read_pos_;
   }
+  int WritePos() {
+    return write_pos_;
+  }
 
+  Buffer* NextBuffer() {
+    return next_;
+  }
 private:
   vector<char> buf_;
   int write_pos_;
   int read_pos_;
   int init_size_;
   int ref_cnt_;
+  Buffer* next_;
 };
 
 struct BufferPos {
   Buffer *buffer_;
-  int     start_, end_;
+  int     pos_;
+  int     write_pos_;
 
   BufferPos()
-    : buffer_(NULL), start_(0), end_(0) {}
+    : buffer_(NULL), pos_(0), write_pos_(0) {}
+
+  bool Done() {
+    return pos_ == write_pos_;
+  }
 };
 
 #endif // __BUFFER_H__

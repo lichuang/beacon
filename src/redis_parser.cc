@@ -80,7 +80,7 @@ bool RedisParser::parseItem() {
 
 bool RedisParser::parseEnd() {
   Buffer *buf = session_->QueryBuffer();
-  cmd_->End(buf->ReadPos());
+  cmd_->End(buf, buf->ReadPos());
   session_->addWaitingCommand(cmd_);
   cmd_ = NULL;
   parse_cmd_done_ = true;

@@ -24,7 +24,7 @@ int Server::Run() {
   int ret;
 
   Listen();
-  ret = engine_->CreateEvent(fd_, kEventRead, this);
+  ret = engine_->AddEvent(fd_, kEventRead, this);
   if (ret < 0) {
     Fatalf("create listen event error:%d", ret);
   }
@@ -60,7 +60,7 @@ int Server::Handle(int mask) {
       return kOk;
     }
     Infof("accept %s for fd %d", session->String(), fd);
-    engine_->CreateEvent(fd, kEventRead, session);
+    engine_->AddEvent(fd, kEventRead, session);
     session_map_[fd] = session;
   }
   return kOk;

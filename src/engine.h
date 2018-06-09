@@ -23,7 +23,7 @@ public:
 
   void Stop();
 
-  int CreateEvent(int fd, int mask, IEventHandler *handler);
+  int AddEvent(int fd, int mask, IEventHandler *handler);
   int DeleteEvent(int fd, int mask);
   void FireEvent(int fd, int mask);
 

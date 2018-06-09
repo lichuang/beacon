@@ -13,6 +13,7 @@
 #include "const.h"
 #include "net.h"
 #include "typedef.h"
+#include "log.h"
 
 static void setNetError(char *err, const char *fmt, ...) {
 	va_list ap;
@@ -84,6 +85,10 @@ error:
 end:
 	freeaddrinfo(servinfo);
 	return s;
+}
+
+int CreateTcpSocket() {
+  return socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 }
 
 static int Accept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
@@ -190,4 +195,92 @@ int TcpRead(int fd, Buffer* buf) {
   } while (n == len);
 
   return nbytes;
+}
+
+int TcpSend(int fd, BufferPos* bufpos) {
+  int nbytes;
+  int save, n;
+  Buffer *buf = bufpos->buffer_;
+  int pos = bufpos->pos_;
+  int len;
+  char *p;
+
+  nbytes = 0;
+
+  do {
+    len = pos - bufpos->write_pos_;
+    p = buf->Start() + bufpos->write_pos_;
+    do {
+      n = send(fd, p, len, 0);
+      save = errno;
+    } while (errno == EINTR);
+
+    if (n == -1) {
+      if (save == EAGAIN || save == EWOULDBLOCK) {
+        return nbytes;
+      } else {
+        return kError;
+      }
+    }
+
+    if (n == 0) {
+      return kError;
+    }
+
+    bufpos->write_pos_ += n;
+    nbytes += n;
+  } while (bufpos->write_pos_ < pos);
+
+  return nbytes;
+}
+
+static int Getaddrinfo(const char *addr, int port, struct addrinfo **servinfo, int socktype) {
+  int err = 0;
+  char port_str[6];
+  struct addrinfo hints;
+
+  snprintf(port_str, 6, "%d", port);
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = socktype;
+
+  if ((err = getaddrinfo(addr, port_str, &hints, servinfo)) != 0) {
+    Errorf("getaddrinfo: %s", strerror(errno));
+    return kError;
+  }
+  return kOk;
+}
+
+static int Connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
+	while (true) {
+		int status = connect(fd, addr, addrlen);
+		if (status == -1) {
+			switch (errno) {
+			case EINTR: continue;
+			case EINPROGRESS: return kInProgress;
+			default:
+				Errorf("connect: %s", strerror(errno));
+				return kError;
+			}
+		}
+		break;
+	}
+	return kOk;
+}
+
+int TcpConnect(int fd, const char *addr, int port) {
+	int status = kError;
+  struct addrinfo *p, *addrs;
+
+  if (Getaddrinfo(addr, port, &addrs, SOCK_STREAM) == kError) {
+    return kError;
+  }
+
+  for (p = addrs; p != NULL; p = p->ai_next) {
+		status = Connect(fd, p->ai_addr, p->ai_addrlen);
+		if (status == kError) continue;
+		break;
+  }
+
+	return status;
 }

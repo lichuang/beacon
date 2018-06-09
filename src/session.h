@@ -7,6 +7,7 @@
 #include "buffer.h"
 #include "event.h"
 #include "net.h"
+#include "server.h" 
 
 using namespace std;
 
@@ -23,9 +24,9 @@ public:
 
 class Session : public IEventHandler {
 public:
-  Session(int fd, const string& ip, int port, Server *server)
+  Session(int fd, const Address& address, Server *server)
     : fd_(fd),
-      address_(ip, port),
+      address_(address),
       server_(server),
       query_buf_(new Buffer(kQueryBufferLen)) {}
   virtual ~Session() {
@@ -47,6 +48,14 @@ public:
     }
 
     return query_buf_->ReadableLength() > 0;
+  }
+
+  Engine* GetEngine() {
+    return server_->GetEngine();
+  }
+
+  Server *GetServer() {
+    return server_;
   }
 
 protected:

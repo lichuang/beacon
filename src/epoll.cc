@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #include "epoll.h"
 #include "errcode.h"
 #include "engine.h"
+#include "log.h"
 
 Epoll::Epoll(Engine *engine)
   : IDispatcher(engine, "epoll") {
@@ -32,10 +35,11 @@ int Epoll::Add(int fd, int mask) {
   
   ee.events = 0;
   mask |= event->mask_;
-  if (mask & kEventRead)  ee.events = EPOLLIN;
-  if (mask & kEventWrite) ee.events = EPOLLOUT;
+  if (mask & kEventRead)  ee.events |= EPOLLIN;
+  if (mask & kEventWrite) ee.events |= EPOLLOUT;
   ee.data.fd = fd;
   if (epoll_ctl(efd_, op, fd, &ee) == -1)  {
+    Errorf("epoll_ctl on %d fail: %s", fd, strerror(errno));
     return kError;
   }
   return kOk;
@@ -49,8 +53,8 @@ int Epoll::Del(int fd, int delmask) {
 
   ee.events = 0;
   mask |= event->mask_;
-  if (mask & kEventRead)  ee.events = EPOLLIN;
-  if (mask & kEventWrite) ee.events = EPOLLOUT;
+  if (mask & kEventRead)  ee.events |= EPOLLIN;
+  if (mask & kEventWrite) ee.events |= EPOLLOUT;
   ee.data.fd = fd;
   if (mask != kEventNone) {
     ret = epoll_ctl(efd_, EPOLL_CTL_MOD, fd, &ee);
@@ -73,10 +77,10 @@ int Epoll::Poll(struct timeval *tvp) {
   if (ret > 0) {
     numevents = ret;
     for (i = 0; i < numevents; ++i) {
-      mask = 0;
+      mask = kEventNone;
       ev = &(events_[i]);
 
-      if (ev->events & EPOLLIN)   mask |= kEventRead;
+      if (ev->events & EPOLLIN)   { mask |= kEventRead; Debugf("fd %d readable", ev->data.fd);}
       if (ev->events & EPOLLOUT)  mask |= kEventWrite;
       if (ev->events & EPOLLERR)  mask |= kEventWrite;
       if (ev->events & EPOLLHUP)  mask |= kEventWrite;

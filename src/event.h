@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include "typedef.h"
 
-const int kEventNone  = 0;
-const int kEventRead  = 1;
-const int kEventWrite = 2;
+// event type
+enum {
+  kEventNone  = 0,
+  kEventRead  = 1,
+  kEventWrite = 2,
+};
 
 struct IEventHandler {
 public:

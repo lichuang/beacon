@@ -24,7 +24,7 @@ void Engine::Stop() {
   stop_ = true;
 }
 
-int Engine::CreateEvent(int fd, int mask, IEventHandler *handler) {
+int Engine::AddEvent(int fd, int mask, IEventHandler *handler) {
   Event *event;
   int ret;
 
