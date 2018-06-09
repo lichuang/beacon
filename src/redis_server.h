@@ -22,6 +22,10 @@ public:
 
   virtual int Handle(int mask);
 
+  Buffer* QueryBuffer() {
+    return query_buf_;
+  }
+
 private:
   int handleWrite();
   int handleRead();
@@ -31,6 +35,7 @@ private:
   list<RedisCommand*> waiting_cmds_;
   RedisCommand *current_cmd_;
   RedisSession *session_;
+  Buffer *query_buf_;
   int status_;
 };
 

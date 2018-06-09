@@ -1,6 +1,7 @@
 #include "redis_command.h"
 #include "redis_info.h"
 #include "redis_session.h"
+#include "redis_server.h"
 
 RedisInfo::RedisInfo(RedisSession *session)
   : parser_(this),
@@ -8,12 +9,18 @@ RedisInfo::RedisInfo(RedisSession *session)
     server_(NULL) {
 }
 
+RedisInfo::RedisInfo(RedisServer *server)
+  : parser_(this),
+    session_(NULL),
+    server_(server) {
+}
+
 Buffer* RedisInfo::QueryBuffer() {
   if (session_) {
     return session_->QueryBuffer();
   }
 
-  return NULL;
+  return server_->QueryBuffer();
 }
 
 bool RedisInfo::hasUnprocessedQueryData() {

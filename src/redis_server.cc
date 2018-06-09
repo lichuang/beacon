@@ -11,10 +11,12 @@ RedisServer::RedisServer(const Address& address, RedisSession *session)
   : Session(-1, address, session->GetServer()),
     current_cmd_(NULL),
     session_(session),
-    status_(kDisconnected) {
+    status_(kDisconnected),
+    query_buf_(new Buffer(kQueryBufferLen)){ 
 }
 
 RedisServer::~RedisServer() {
+  delete query_buf_;
 }
 
 void RedisServer::addQueryCommand(RedisCommand* cmd) {

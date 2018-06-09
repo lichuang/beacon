@@ -12,6 +12,7 @@ class RedisServer;
 class RedisInfo {
 public:
   RedisInfo(RedisSession *session);
+  RedisInfo(RedisServer *server);
 
   Buffer* QueryBuffer();
   void    addWaitingCommand(RedisCommand *);
