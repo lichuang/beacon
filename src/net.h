@@ -51,7 +51,8 @@ int CreateTcpSocket();
 int TcpAccept(int sfd, string *cip, int *port, char* err);
 int SetNonBlock(int fd, char *err);
 errno_t TcpRead(int fd, Buffer* buf);
-int TcpSend(int fd, BufferPos* bufpos);
+//int TcpSend(int fd, BufferPos* bufpos);
+errno_t TcpSend(int fd, Buffer* buf);
 int TcpConnect(int fd, const char *addr, int port);
 
 #endif // __NET_H__

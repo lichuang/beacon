@@ -39,11 +39,17 @@ RedisParser::RedisParser(RedisInfo *info)
 RedisParser::~RedisParser() {
 }
 
-RedisCommand* RedisParser::Parse(Buffer *buffer, int mode) {
-  mode_ = mode;
-  if (cmd_ == NULL) {
-    cmd_ = info_->getFreeCommand();
+RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
+  if (cmd == NULL) { // req mode
+    mode_ = REDIS_REQ_MODE;
+    if (cmd_ == NULL) {
+      cmd_ = info_->GetFreeCommand();
+    }
+  } else { // response mode
+    mode_ = REDIS_REP_MODE;
+    cmd_ = cmd;
   }
+  cmd_->SetMode(mode_);
   buffer_ = buffer;
 
   while (buffer_ && buffer_->hasUnprocessedData()) {

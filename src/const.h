@@ -29,4 +29,11 @@ enum {
   kDisconnected,
 };
 
+// redis cmd request/response mode
+enum {
+  REDIS_REQ_MODE,
+  REDIS_REP_MODE,
+  REDIS_NONE_MODE,
+};
+
 #endif // __CONST_H__

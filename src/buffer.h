@@ -28,6 +28,13 @@ public:
     read_pos_ += size;
   }
 
+  void SetReadPos(int pos) {
+    read_pos_ = pos;
+  }
+  void SetWritePos(int pos) {
+    write_pos_ = pos;
+  }
+
   int WritableLength();
   int ReadableLength();
 

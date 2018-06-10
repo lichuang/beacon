@@ -6,6 +6,7 @@
 #include "event.h"
 #include "net.h"
 #include "redis_session.h"
+#include "redis_info.h"
 
 using namespace std;
 
@@ -30,13 +31,15 @@ private:
   int handleWrite();
   int handleRead();
 
+  void nextWriteCommand();
+
 private:
-  list<RedisCommand*> query_cmds_;
-  list<RedisCommand*> waiting_cmds_;
-  RedisCommand *current_cmd_;
+  RedisCommand *current_write_cmd_;
+  RedisCommand *current_read_cmd_;
   RedisSession *session_;
   int status_;
   Buffer *query_buf_;
+  RedisInfo info_;
 };
 
 RedisServer* CreateServer(const Address& address, RedisSession *session);

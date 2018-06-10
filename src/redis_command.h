@@ -16,12 +16,19 @@ public:
 
   void Init(Buffer *buf, int start);
   void End(Buffer *buf, int end);
+  void ReadyWrite();
+
   BufferPos* Current() {
     return &current_;
   }
 
+  void FreeBuffers();
+
   BufferPos*  NextBufferPos();
 
+  void SetMode(int mode) {
+    mode_ = mode;
+  }
   void SetStatus(int status) {
     status_ = status;
   }
@@ -42,6 +49,7 @@ private:
   BufferPos start_, end_;
   BufferPos current_;
   int status_;
+  int mode_;
 };
 
 #endif // __REDIS_COMMAND_H__

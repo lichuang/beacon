@@ -37,10 +37,14 @@ int RedisSession::Handle(int mask) {
   return kOk;
 }
 
-void RedisSession::addWaitingCommand(RedisCommand *cmd) {
+void RedisSession::addQueryCommand(RedisCommand *cmd) {
   //waiting_commands_.push_back(cmd);
   RedisServer *server = CreateServer(Address("127.0.0.1", 6379), this);
   server->addQueryCommand(cmd);
+}
+
+void RedisSession::addResponseCommand(RedisCommand *cmd) {
+  info_.AddWaitWriteCmd(cmd);
 }
 
 int RedisSession::handleRead() {
@@ -55,9 +59,9 @@ int RedisSession::handleRead() {
   
   while (query_buf_->ReadableLength() > 0) {
     Infof("query from %s %s", address_.String(), query_buf_->Start());
-    RedisCommand *cmd = info_.Parse(query_buf_, REDIS_REQ_MODE);
+    RedisCommand *cmd = info_.GetParser()->Parse(query_buf_, NULL);
     if (cmd->GetReady()) {
-      addWaitingCommand(cmd);
+      addQueryCommand(cmd);
     } else if (cmd->Error()) {
       delete cmd;
       return false;

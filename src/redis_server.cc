@@ -9,10 +9,12 @@
 
 RedisServer::RedisServer(const Address& address, RedisSession *session)
   : Session(-1, address, session->GetServer()),
-    current_cmd_(NULL),
+    current_write_cmd_(NULL),
+    current_read_cmd_(NULL),
     session_(session),
     status_(kDisconnected),
-    query_buf_(new Buffer(kQueryBufferLen)){ 
+    query_buf_(new Buffer(kQueryBufferLen)),
+    info_(this) { 
 }
 
 RedisServer::~RedisServer() {
@@ -20,7 +22,7 @@ RedisServer::~RedisServer() {
 }
 
 void RedisServer::addQueryCommand(RedisCommand* cmd) {
-  query_cmds_.push_back(cmd);   
+  info_.AddWaitWriteCmd(cmd);   
 }
 
 bool RedisServer::Connect() {
@@ -61,6 +63,22 @@ int RedisServer::Handle(int mask) {
   return kOk;
 }
 
+void RedisServer::nextWriteCommand() {
+  if (current_write_cmd_ != NULL) {
+    return;
+  }
+
+  list<RedisCommand*> *wait_cmds = info_.GetWaitWriteCmds();
+  if (wait_cmds->empty()) {
+    return;
+  }
+  current_write_cmd_ = wait_cmds->front();
+  wait_cmds->pop_front();
+
+  // ready to write cmd 
+  current_write_cmd_->ReadyWrite(); 
+}
+
 int RedisServer::handleWrite() {
   if (status_ == kConnecting) {
     status_ = kConnected;
@@ -70,34 +88,25 @@ int RedisServer::handleWrite() {
     return kError;
   }
 
-  if (query_cmds_.empty() && current_cmd_ == NULL) {
-    return kOk;
-  }
-  if (current_cmd_ == NULL) {
-    current_cmd_ = query_cmds_.front();
-    query_cmds_.pop_front();
-  }
-  
-  while (current_cmd_ != NULL) {
-    BufferPos *current = current_cmd_->NextBufferPos();
+  nextWriteCommand();
+
+  while (current_write_cmd_ != NULL) {
+    BufferPos *current = current_write_cmd_->NextBufferPos();
     while (current != NULL && current->buffer_ != NULL) {
-      int ret = TcpSend(fd_, current);
+      errno_t ret = TcpSend(fd_, current->buffer_);
       if (ret < 0) {
         return kError;
       }
-      if (current->Done()) {
-        current = current_cmd_->NextBufferPos();
-      } else {
+      if (ret == kAgain) {
         return kOk;
       }
+      current = current_write_cmd_->NextBufferPos();
     }
-    waiting_cmds_.push_back(current_cmd_);
-    current_cmd_ = NULL;
-    if (query_cmds_.empty()) {
-      break;
-    }
-    current_cmd_ = query_cmds_.front();
-    query_cmds_.pop_front();
+
+    // end of write current cmd,send next cmd
+    info_.AddWaitReadCmd(current_write_cmd_);
+    current_write_cmd_ = NULL;
+    nextWriteCommand();
   }
 
   return kOk;
@@ -108,9 +117,12 @@ int RedisServer::handleRead() {
   Infof("response from %s %s", address_.String(), query_buf_->Start());
   /*
   while (!waiting_cmds_.empty()) {
-    RedisCommand *cmd = waiting_cmds_.front(); 
-  }
-  */
+    RedisCommand *cmd = waiting_cmds_.front();
+    // end of write current cmd,send next cmd
+    info_.AddWaitReadCmd(current_write_cmd_);
+    current_write_cmd_ = NULL;
+    nextWriteCommand();
+    */
   return kOk;
 }
 

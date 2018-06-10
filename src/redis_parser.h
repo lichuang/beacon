@@ -19,19 +19,12 @@ enum RedisParserState {
   PARSE_STATE_NUM
 };
 
-// cmd request/response mode
-enum {
-  REDIS_REQ_MODE,
-  REDIS_REP_MODE,
-  REDIS_NONE_MODE,
-};
-
 class RedisParser {
 public:
   RedisParser(RedisInfo *info);
   ~RedisParser();
 
-  RedisCommand* Parse(Buffer *buffer, int mode);
+  RedisCommand* Parse(Buffer *buffer, RedisCommand *cmd);
 
 private:
   bool parseBegin();

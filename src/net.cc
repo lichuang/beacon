@@ -196,19 +196,15 @@ errno_t TcpRead(int fd, Buffer* buf) {
   return kOk;
 }
 
-int TcpSend(int fd, BufferPos* bufpos) {
-  int nbytes;
+// return kOk\kAgain\kEof
+errno_t TcpSend(int fd, Buffer* buf) {
   int save, n;
-  Buffer *buf = bufpos->buffer_;
-  int pos = bufpos->pos_;
   int len;
   char *p;
 
-  nbytes = 0;
-
   do {
-    len = pos - bufpos->write_pos_;
-    p = buf->Start() + bufpos->write_pos_;
+    len = buf->ReadableLength();
+    p = buf->NextRead();
     do {
       n = send(fd, p, len, 0);
       save = errno;
@@ -216,21 +212,20 @@ int TcpSend(int fd, BufferPos* bufpos) {
 
     if (n == -1) {
       if (save == EAGAIN || save == EWOULDBLOCK) {
-        return nbytes;
+        return kAgain;
       } else {
-        return kError;
+        return kEOF;
       }
     }
 
     if (n == 0) {
-      return kError;
+      return kEOF;
     }
 
-    bufpos->write_pos_ += n;
-    nbytes += n;
-  } while (bufpos->write_pos_ < pos);
+    buf->AdvanceRead(n);
+  } while (n == len);
 
-  return nbytes;
+  return kOk;
 }
 
 static int Getaddrinfo(const char *addr, int port, struct addrinfo **servinfo, int socktype) {
