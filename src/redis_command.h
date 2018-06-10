@@ -3,6 +3,12 @@
 
 #include "buffer.h"
 
+enum {
+  REDIS_COMMAND_READY,
+  REDIS_COMMAND_ERROR,
+  REDIS_COMMAND_NONE,
+};
+
 class RedisCommand {
 public:
   RedisCommand();
@@ -16,9 +22,22 @@ public:
 
   BufferPos*  NextBufferPos();
 
+  void SetStatus(int status) {
+    status_ = status;
+  }
+
+  int GetStatus() {
+    return status_;
+  }
+
+  bool GetReady() {
+    return status_ == REDIS_COMMAND_READY;
+  }
+
 private:
   BufferPos start_, end_;
   BufferPos current_;
+  int status_;
 };
 
 #endif // __REDIS_COMMAND_H__

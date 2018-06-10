@@ -52,6 +52,14 @@ public:
     return write_pos_;
   }
 
+  bool Full() {
+    return write_pos_ == int(buf_.capacity());
+  }
+
+  bool hasUnprocessedData() {
+    return read_pos_ < write_pos_;
+  }
+
   Buffer* NextBuffer() {
     return next_;
   }

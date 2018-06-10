@@ -1,6 +1,6 @@
 #include "redis_command.h"
 
-RedisCommand::RedisCommand() {
+RedisCommand::RedisCommand() : status_(REDIS_COMMAND_NONE) {
 }
 
 RedisCommand::~RedisCommand() {
@@ -14,6 +14,7 @@ void RedisCommand::Init(Buffer *buf, int start) {
 void RedisCommand::End(Buffer *buf, int end) {
   end_.buffer_ = buf;
   end_.pos_    = end;
+  status_ = REDIS_COMMAND_READY;
 }
 
 BufferPos* RedisCommand::NextBufferPos() {

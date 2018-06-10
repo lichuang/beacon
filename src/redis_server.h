@@ -35,8 +35,8 @@ private:
   list<RedisCommand*> waiting_cmds_;
   RedisCommand *current_cmd_;
   RedisSession *session_;
-  Buffer *query_buf_;
   int status_;
+  Buffer *query_buf_;
 };
 
 RedisServer* CreateServer(const Address& address, RedisSession *session);

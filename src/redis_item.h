@@ -7,7 +7,7 @@
 using namespace std;
 
 class RedisCommand;
-class RedisInfo;
+class Buffer;
 
 // redis data type
 enum {
@@ -47,17 +47,15 @@ enum {
 
 struct RedisItem {
 public:
-  RedisItem(int type, RedisCommand *cmd, RedisInfo *info)
+  RedisItem(int type)
     : type_(type),
       state_(NONE_ITEM_STATE),
-      len_(0),
-      cmd_(cmd),
-      info_(info) {
+      len_(0) {
   }
 
   virtual ~RedisItem() {}
 
-  virtual bool Parse() = 0;
+  virtual bool Parse(RedisCommand *, Buffer *) = 0;
 
   void markStartPos(Buffer* buf) {
     start_.buffer_ = buf;
@@ -76,17 +74,17 @@ public:
   BufferPos start_, end_;
 
   RedisCommand *cmd_;
-  RedisInfo *info_;
+  Buffer *buffer_;
 };
 
 struct RedisArrayItem : public RedisItem {
 public:
-  RedisArrayItem(RedisCommand *cmd, RedisInfo *info)
-    : RedisItem(REDIS_ARRAY, cmd, info)
+  RedisArrayItem()
+    : RedisItem(REDIS_ARRAY)
   {}
 
   virtual ~RedisArrayItem() {}
-  virtual bool Parse();
+  virtual bool Parse(RedisCommand *, Buffer *);
 
   int sign_;
   int item_num_;
@@ -95,41 +93,41 @@ public:
 
 struct RedisStringItem : public RedisItem {
 public:
-  RedisStringItem(RedisCommand *cmd, RedisInfo *info)
-    : RedisItem(REDIS_STRING, cmd, info), str_len_(0)
+  RedisStringItem()
+    : RedisItem(REDIS_STRING), str_len_(0)
   {}
 
   virtual ~RedisStringItem() {}
 
-  virtual bool Parse();
+  virtual bool Parse(RedisCommand *, Buffer *);
 
   int str_len_;
 };
 
 struct RedisBulkItem : public RedisItem {
 public:
-  RedisBulkItem(RedisCommand *cmd, RedisInfo *info)
-    : RedisItem(REDIS_BULK, cmd, info)
+  RedisBulkItem()
+    : RedisItem(REDIS_BULK)
   {}
 
   virtual ~RedisBulkItem() {}
 
-  virtual bool Parse();
+  virtual bool Parse(RedisCommand *, Buffer *);
 
   int len_;
 };
 
 struct RedisIntItem : public RedisItem {
 public:
-  RedisIntItem(RedisCommand *cmd, RedisInfo *info)
-    : RedisItem(REDIS_INT, cmd, info)
+  RedisIntItem()
+    : RedisItem(REDIS_INT)
   {}
 
   virtual ~RedisIntItem() {}
 
-  virtual bool Parse();
+  virtual bool Parse(RedisCommand *, Buffer *);
 };
 
-extern RedisItem* newRedisItem(int type, RedisCommand *cmd, RedisInfo *info);
+extern RedisItem* newRedisItem(int type);
 
 #endif //  __REDIS_ITEM_H__

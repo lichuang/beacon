@@ -160,12 +160,12 @@ int SetNonBlock(int fd, char *err) {
 	return setBlock(fd, true, err);
 }
 
-int TcpRead(int fd, Buffer* buf) {
+// return kOk\kAgain\kEof
+errno_t TcpRead(int fd, Buffer* buf) {
   int n;
-  int len, save, nbytes;
+  int len, save;
   char *p;
 
-  nbytes = 0;
   do {
     len = buf->WritableLength();
     p   = buf->NextWrite();
@@ -178,23 +178,22 @@ int TcpRead(int fd, Buffer* buf) {
     if (n == -1) {
       if (save == EAGAIN || save == EWOULDBLOCK) {
         // non-blocking mode, there is no data in the buffer now
-        break;
+        return kAgain;
       } else if (save != EINTR) {
         // some error has occured
-        return kError;
+        return kEOF;
       }
     }
 
     // socket has been closed
     if (n == 0) {
-      return kError;
+      return kEOF;
     }
 
     buf->AdvanceWrite(n);
-    nbytes += n;
   } while (n == len);
 
-  return nbytes;
+  return kOk;
 }
 
 int TcpSend(int fd, BufferPos* bufpos) {

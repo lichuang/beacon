@@ -39,51 +39,56 @@ RedisParser::RedisParser(RedisInfo *info)
 RedisParser::~RedisParser() {
 }
 
-bool RedisParser::Parse() {
-  while (info_->hasUnprocessedQueryData() > 0) {
-    parse_cmd_done_ = false;
-    while (!parse_cmd_done_) {
-      if (!(this->*state_fun_[state_])()) {
-        return false;
-      }
+RedisCommand* RedisParser::Parse(Buffer *buffer, int mode) {
+  mode_ = mode;
+  if (cmd_ == NULL) {
+    cmd_ = info_->getFreeCommand();
+  }
+  buffer_ = buffer;
+
+  while (buffer->hasUnprocessedData()) {
+    if (!(this->*state_fun_[state_])()) {
+      cmd_->SetStatus(REDIS_COMMAND_ERROR);
+      return cmd_;
+    }
+    if (cmd_ && cmd_->GetReady()) {
+      return cmd_;
     }
   }
-  return true;
+  return cmd_;
 }
 
 void RedisParser::reset() {
   state_ = PARSE_BEGIN;
   cmd_   = NULL;
   item_  = NULL;
+  buffer_ = NULL;
   type_  = REDIS_NONE_TYPE;
 }
 
 bool RedisParser::parseBegin() {
-  Buffer *buf = info_->QueryBuffer();
-  cmd_ = info_->getFreeCommand();
-  cmd_->Init(buf, buf->ReadPos());
+  cmd_->Init(buffer_, buffer_->ReadPos());
   state_ = PARSE_ITEM;
   return true;
 }
 
 bool RedisParser::parseItem() {
-  Buffer *buf = info_->QueryBuffer();
-  char t = *(buf->NextRead());
+  // TODO: 
+  if (item_ != NULL) {
+
+  }
+  char t = *(buffer_->NextRead());
 
   if (!ParseType(t, &type_)) {
     return false;
   }
-  item_ = newRedisItem(type_, cmd_, info_);
+  item_ = newRedisItem(type_);
   state_ = PARSE_END;
-  return item_->Parse();
+  return item_->Parse(cmd_, buffer_);
 }
 
 bool RedisParser::parseEnd() {
-  Buffer *buf = info_->QueryBuffer();
-  cmd_->End(buf, buf->ReadPos());
-  info_->addWaitingCommand(cmd_);
-  cmd_ = NULL;
-  parse_cmd_done_ = true;
+  cmd_->End(buffer_, buffer_->ReadPos());
 
   reset();
 

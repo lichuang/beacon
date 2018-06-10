@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string>
 #include "const.h"
+#include "errcode.h"
 
 using namespace std;
 
@@ -49,7 +50,7 @@ int CreateTcpServer(int port, const char* addr, int backlog, char* err);
 int CreateTcpSocket();
 int TcpAccept(int sfd, string *cip, int *port, char* err);
 int SetNonBlock(int fd, char *err);
-int TcpRead(int fd, Buffer* buf);
+errno_t TcpRead(int fd, Buffer* buf);
 int TcpSend(int fd, BufferPos* bufpos);
 int TcpConnect(int fd, const char *addr, int port);
 

@@ -47,13 +47,22 @@ int RedisSession::handleRead() {
   int ret;
 
   ret = TcpRead(fd_, query_buf_);
-
   if (ret < 0) {
     return ret;
   }
 
-  Infof("query from %s %s", address_.String(), query_buf_->Start());
-  info_.Parse();
+  // TODO: limit client process cmd number
+  
+  while (query_buf_->ReadableLength() > 0) {
+    Infof("query from %s %s", address_.String(), query_buf_->Start());
+    RedisCommand *cmd = info_.Parse(query_buf_, REDIS_REQ_MODE);
+    if (cmd->GetReady()) {
+      addWaitingCommand(cmd);
+    }
+    if (query_buf_->ReadableLength() == 0) {
+      query_buf_ = new Buffer(kQueryBufferLen); 
+    }
+  }
   return kOk;
 }
 

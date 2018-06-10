@@ -15,29 +15,6 @@ RedisInfo::RedisInfo(RedisServer *server)
     server_(server) {
 }
 
-Buffer* RedisInfo::QueryBuffer() {
-  if (session_) {
-    return session_->QueryBuffer();
-  }
-
-  return server_->QueryBuffer();
-}
-
-bool RedisInfo::hasUnprocessedQueryData() {
-  Buffer *buffer = QueryBuffer();
-  if (buffer == NULL) {
-    return false;
-  }
-
-  return buffer->ReadableLength() > 0;
-}
-
-void RedisInfo::addWaitingCommand(RedisCommand *cmd) {
-  if (session_) {
-    session_->addWaitingCommand(cmd);
-  }
-}
-
 RedisCommand* RedisInfo::getFreeCommand() {
   RedisCommand *cmd;
 
@@ -51,6 +28,6 @@ RedisCommand* RedisInfo::getFreeCommand() {
   return cmd;
 }
 
-bool RedisInfo::Parse() {
-  return parser_.Parse();
+RedisCommand* RedisInfo::Parse(Buffer *buffer, int mode) {
+  return parser_.Parse(buffer, mode);
 }

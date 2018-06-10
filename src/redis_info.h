@@ -14,13 +14,9 @@ public:
   RedisInfo(RedisSession *session);
   RedisInfo(RedisServer *server);
 
-  Buffer* QueryBuffer();
-  void    addWaitingCommand(RedisCommand *);
   RedisCommand* getFreeCommand();
 
-  bool hasUnprocessedQueryData();
-
-  bool Parse();
+  RedisCommand* Parse(Buffer *, int );
 
 private:  
   RedisParser parser_;
