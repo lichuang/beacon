@@ -3,50 +3,42 @@
 #include "redis_session.h"
 
 TEST(RedisItemTests, TestRedisStringItem) {
-	RedisSession *session = new RedisSession(0, "0.0.0.0", 123, NULL);
-	Buffer* buffer = session->QueryBuffer();
-	char *start = buffer->Start();
+	Buffer buffer(100); 
+	char *start = buffer.Start();
 	string ok = "+OK\r\n";
-	string wrong = "OK\r\n";
-	RedisCommand cmd;
-	RedisStringItem item(&cmd, session);
+	RedisStringItem item;
 
 	memcpy(start, ok.c_str(), ok.length());
-  buffer->AdvanceWrite(ok.length());
-	EXPECT_TRUE(session->hasUnprocessedQueryData());
-  EXPECT_EQ(buffer->ReadableLength(), ok.length());
-	EXPECT_TRUE(item.Parse());
-  EXPECT_EQ(buffer->ReadableLength(), 0);
+  buffer.AdvanceWrite(ok.length());
+	EXPECT_TRUE(item.Parse(&buffer));
+  EXPECT_EQ(buffer.ReadableLength(), 1);
+  EXPECT_EQ(*buffer.NextRead(), '\n');
 }
 
 TEST(RedisItemTests, TestRedisBulkItem) {
-	RedisSession *session = new RedisSession(0, "0.0.0.0", 123, NULL);
-	Buffer* buffer = session->QueryBuffer();
-	char *start = buffer->Start();
+	Buffer buffer(100); 
+	char *start = buffer.Start();
 	string ok = "$6\r\nfoobar\r\n";
-	RedisCommand cmd;
-	RedisBulkItem item(&cmd, session);
+	RedisBulkItem item;
 
 	memcpy(start, ok.c_str(), ok.length());
-  buffer->AdvanceWrite(ok.length());
-	EXPECT_TRUE(session->hasUnprocessedQueryData());
-  EXPECT_EQ(buffer->ReadableLength(), ok.length());
-	EXPECT_TRUE(item.Parse());
-  EXPECT_EQ(buffer->ReadableLength(), 0);
+  buffer.AdvanceWrite(ok.length());
+  EXPECT_EQ(buffer.ReadableLength(), ok.length());
+	EXPECT_TRUE(item.Parse(&buffer));
+  EXPECT_EQ(buffer.ReadableLength(), 1);
+  EXPECT_EQ(*buffer.NextRead(), '\n');
 }
 
 TEST(RedisItemTests, TestRedisArrayItem) {
-	RedisSession *session = new RedisSession(0, "0.0.0.0", 123, NULL);
-	Buffer* buffer = session->QueryBuffer();
-	char *start = buffer->Start();
+	Buffer buffer(100); 
+	char *start = buffer.Start();
 	string ok = "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n";
-	RedisCommand cmd;
-	RedisArrayItem item(&cmd, session);
+	RedisArrayItem item;
 
 	memcpy(start, ok.c_str(), ok.length());
-  buffer->AdvanceWrite(ok.length());
-	EXPECT_TRUE(session->hasUnprocessedQueryData());
-  EXPECT_EQ(buffer->ReadableLength(), ok.length());
-	EXPECT_TRUE(item.Parse());
-  EXPECT_EQ(buffer->ReadableLength(), 0);
+  buffer.AdvanceWrite(ok.length());
+  EXPECT_EQ(buffer.ReadableLength(), ok.length());
+	EXPECT_TRUE(item.Parse(&buffer));
+  EXPECT_EQ(buffer.ReadableLength(), 1);
+  EXPECT_EQ(*buffer.NextRead(), '\n');
 }

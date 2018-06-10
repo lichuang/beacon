@@ -6,7 +6,6 @@
 
 using namespace std;
 
-class RedisCommand;
 class Buffer;
 
 // redis data type
@@ -55,7 +54,7 @@ public:
 
   virtual ~RedisItem() {}
 
-  virtual bool Parse(RedisCommand *, Buffer *) = 0;
+  virtual bool Parse(Buffer *) = 0;
 
   void markStartPos(Buffer* buf) {
     start_.buffer_ = buf;
@@ -73,7 +72,6 @@ public:
   int len_;
   BufferPos start_, end_;
 
-  RedisCommand *cmd_;
   Buffer *buffer_;
 };
 
@@ -84,7 +82,7 @@ public:
   {}
 
   virtual ~RedisArrayItem() {}
-  virtual bool Parse(RedisCommand *, Buffer *);
+  virtual bool Parse(Buffer *);
 
   int sign_;
   int item_num_;
@@ -99,7 +97,7 @@ public:
 
   virtual ~RedisStringItem() {}
 
-  virtual bool Parse(RedisCommand *, Buffer *);
+  virtual bool Parse(Buffer *);
 
   int str_len_;
 };
@@ -112,7 +110,7 @@ public:
 
   virtual ~RedisBulkItem() {}
 
-  virtual bool Parse(RedisCommand *, Buffer *);
+  virtual bool Parse(Buffer *);
 
   int len_;
 };
@@ -125,7 +123,7 @@ public:
 
   virtual ~RedisIntItem() {}
 
-  virtual bool Parse(RedisCommand *, Buffer *);
+  virtual bool Parse(Buffer *);
 };
 
 extern RedisItem* newRedisItem(int type);

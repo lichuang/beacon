@@ -34,6 +34,10 @@ public:
     return status_ == REDIS_COMMAND_READY;
   }
 
+  bool Error() {
+    return status_ == REDIS_COMMAND_ERROR;
+  }
+
 private:
   BufferPos start_, end_;
   BufferPos current_;

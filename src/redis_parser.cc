@@ -46,7 +46,7 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, int mode) {
   }
   buffer_ = buffer;
 
-  while (buffer->hasUnprocessedData()) {
+  while (buffer_ && buffer_->hasUnprocessedData()) {
     if (!(this->*state_fun_[state_])()) {
       cmd_->SetStatus(REDIS_COMMAND_ERROR);
       return cmd_;
@@ -60,9 +60,6 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, int mode) {
 
 void RedisParser::reset() {
   state_ = PARSE_BEGIN;
-  cmd_   = NULL;
-  item_  = NULL;
-  buffer_ = NULL;
   type_  = REDIS_NONE_TYPE;
 }
 
@@ -84,10 +81,14 @@ bool RedisParser::parseItem() {
   }
   item_ = newRedisItem(type_);
   state_ = PARSE_END;
-  return item_->Parse(cmd_, buffer_);
+  return item_->Parse(buffer_);
 }
 
 bool RedisParser::parseEnd() {
+  if (*buffer_->NextRead() != '\n') {
+    return false;
+  }
+  buffer_->AdvanceRead(1);
   cmd_->End(buffer_, buffer_->ReadPos());
 
   reset();

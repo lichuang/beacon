@@ -58,6 +58,9 @@ int RedisSession::handleRead() {
     RedisCommand *cmd = info_.Parse(query_buf_, REDIS_REQ_MODE);
     if (cmd->GetReady()) {
       addWaitingCommand(cmd);
+    } else if (cmd->Error()) {
+      delete cmd;
+      return false;
     }
     if (query_buf_->ReadableLength() == 0) {
       query_buf_ = new Buffer(kQueryBufferLen); 

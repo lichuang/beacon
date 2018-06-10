@@ -4,17 +4,15 @@
 #include "redis_session.h"
 
 TEST(RedisParserTests, TestParse) {
-	RedisSession *session = new RedisSession(0, "0.0.0.0", 123, NULL);
-	Buffer* buffer = session->QueryBuffer();
-	char *start = buffer->Start();
-	string ok = "+OK\r\n";
-  RedisParser parser(session);
+  RedisInfo info((RedisSession*)NULL);
+	Buffer buffer(100);
+	char *start = buffer.Start();
+	string ok = "*2\r\n$3\r\nget\r\n$1\r\na\r\n";
+  RedisParser parser(&info);
+  RedisCommand *cmd;
 
 	memcpy(start, ok.c_str(), ok.length());
-  buffer->AdvanceWrite(ok.length());
-  EXPECT_TRUE(parser.Parse());
-
-  list<RedisCommand*>* cmds = session->getWaintingCommands();
-
-  EXPECT_EQ(cmds->size(), 1);
+  buffer.AdvanceWrite(ok.length());
+  cmd = parser.Parse(&buffer, REDIS_REQ_MODE);
+  EXPECT_TRUE(cmd->GetReady());
 }

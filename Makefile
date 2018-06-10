@@ -13,7 +13,8 @@ EXTENSION=cc
 OBJS=$(patsubst $(SRC_DIR)/%.$(EXTENSION), $(OBJ_DIR)/%.o,$(wildcard $(SRC_DIR)/*.$(EXTENSION)))
 TEST_OBJS=$(patsubst $(TEST_DIR)/%.$(EXTENSION), $(TEST_DIR)/%.o,$(wildcard $(TEST_DIR)/*.$(EXTENSION)))
 DEPS=$(patsubst $(OBJ_DIR)/%.o, $(DEPS_DIR)/%.d, $(OBJS))
-SRC_OBJS=./obj/buffer.o  ./obj/net.o  ./obj/redis_command.o  ./obj/server.o  ./obj/logger.o  ./obj/redis_session.o  ./obj/redis_item.o  ./obj/epoll.o ./obj/util.o  ./obj/bitmap.o  ./obj/engine.o  ./obj/redis_parser.o
+SRC_OBJS=./obj/buffer.o  ./obj/net.o  ./obj/redis_command.o  ./obj/server.o  ./obj/logger.o  ./obj/redis_session.o  ./obj/redis_item.o  ./obj/epoll.o ./obj/util.o  ./obj/bitmap.o  ./obj/engine.o  ./obj/redis_parser.o ./obj/redis_info.o ./obj/redis_server.o
+
 INCLUDE= -I./src
 
 CC=g++
