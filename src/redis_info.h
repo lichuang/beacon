@@ -23,17 +23,20 @@ public:
   void AddWaitReadCmd(RedisCommand *cmd) {
     wait_read_cmds_.push_back(cmd);
   }
-  list<RedisCommand*>* GetWaitReadCmds() {
-    return &wait_read_cmds_;
-  }
 
   void AddWaitWriteCmd(RedisCommand *cmd) {
     wait_write_cmds_.push_back(cmd);
   }
-  list<RedisCommand*>* GetWaitWriteCmds() {
-    return &wait_write_cmds_;
+
+  void ResetWriteCommand() {
+    current_write_cmd_ = NULL;
+  }
+  void ResetReadCommand() {
+    current_read_cmd_ = NULL;
   }
 
+  RedisCommand* NextWriteCommand();
+  RedisCommand* NextReadCommand();
 private:  
   RedisParser parser_;
   RedisSession *session_;
@@ -42,6 +45,8 @@ private:
 
   list<RedisCommand*> wait_read_cmds_;
   list<RedisCommand*> wait_write_cmds_;
+  RedisCommand *current_write_cmd_;
+  RedisCommand *current_read_cmd_;
 };
 
 #endif // __REDIS_INFO_H__

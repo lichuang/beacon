@@ -9,8 +9,6 @@
 
 RedisServer::RedisServer(const Address& address, RedisSession *session)
   : Session(-1, address, session->GetServer()),
-    current_write_cmd_(NULL),
-    current_read_cmd_(NULL),
     session_(session),
     status_(kDisconnected),
     query_buf_(new Buffer(kQueryBufferLen)),
@@ -63,23 +61,9 @@ int RedisServer::Handle(int mask) {
   return kOk;
 }
 
-void RedisServer::nextWriteCommand() {
-  if (current_write_cmd_ != NULL) {
-    return;
-  }
-
-  list<RedisCommand*> *wait_cmds = info_.GetWaitWriteCmds();
-  if (wait_cmds->empty()) {
-    return;
-  }
-  current_write_cmd_ = wait_cmds->front();
-  wait_cmds->pop_front();
-
-  // ready to write cmd 
-  current_write_cmd_->ReadyWrite(); 
-}
-
 int RedisServer::handleWrite() {
+  RedisCommand *cmd;
+
   if (status_ == kConnecting) {
     status_ = kConnected;
   }
@@ -88,10 +72,10 @@ int RedisServer::handleWrite() {
     return kError;
   }
 
-  nextWriteCommand();
+  cmd = info_.NextWriteCommand();
 
-  while (current_write_cmd_ != NULL) {
-    BufferPos *current = current_write_cmd_->NextBufferPos();
+  while (cmd != NULL) {
+    BufferPos *current = cmd->NextBufferPos();
     while (current != NULL && current->buffer_ != NULL) {
       errno_t ret = TcpSend(fd_, current->buffer_);
       if (ret < 0) {
@@ -100,30 +84,47 @@ int RedisServer::handleWrite() {
       if (ret == kAgain) {
         return kOk;
       }
-      current = current_write_cmd_->NextBufferPos();
+      current = cmd->NextBufferPos();
     }
 
     // end of write current cmd,send next cmd
-    info_.AddWaitReadCmd(current_write_cmd_);
-    current_write_cmd_ = NULL;
-    nextWriteCommand();
+    info_.AddWaitReadCmd(cmd);
+    info_.ResetWriteCommand();
+    cmd = info_.NextWriteCommand();
   }
 
   return kOk;
 }
 
 int RedisServer::handleRead() {
-  TcpRead(fd_, query_buf_);
+  RedisCommand *cmd;
+
+  errno_t ret = TcpRead(fd_, query_buf_);
+  if (ret < 0) {
+    return kError;
+  }
   Infof("response from %s %s", address_.String(), query_buf_->Start());
-  /*
-  while (!waiting_cmds_.empty()) {
-    RedisCommand *cmd = waiting_cmds_.front();
-    // end of write current cmd,send next cmd
-    info_.AddWaitReadCmd(current_write_cmd_);
-    current_write_cmd_ = NULL;
-    nextWriteCommand();
-    */
+
+  cmd = info_.NextReadCommand();
+  while (cmd != NULL && query_buf_->hasUnprocessedData()) {
+    cmd = info_.GetParser()->Parse(query_buf_, cmd);
+
+    if (cmd->GetReady()) {
+      session_->AddResponseCommand(cmd);
+      info_.ResetReadCommand();
+      cmd = info_.NextReadCommand();
+    } else if (cmd->Error()){
+      return kError;
+    }
+    if (query_buf_->ReadableLength() == 0) {
+      query_buf_ = new Buffer(kQueryBufferLen); 
+    }
+  }
+
   return kOk;
+}
+
+void RedisServer::serverEof() {
 }
 
 RedisServer* CreateServer(const Address& address, RedisSession *session) {

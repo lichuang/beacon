@@ -31,11 +31,9 @@ private:
   int handleWrite();
   int handleRead();
 
-  void nextWriteCommand();
+  void serverEof();
 
 private:
-  RedisCommand *current_write_cmd_;
-  RedisCommand *current_read_cmd_;
   RedisSession *session_;
   int status_;
   Buffer *query_buf_;

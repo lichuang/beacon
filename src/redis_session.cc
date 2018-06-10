@@ -43,7 +43,7 @@ void RedisSession::addQueryCommand(RedisCommand *cmd) {
   server->addQueryCommand(cmd);
 }
 
-void RedisSession::addResponseCommand(RedisCommand *cmd) {
+void RedisSession::AddResponseCommand(RedisCommand *cmd) {
   info_.AddWaitWriteCmd(cmd);
 }
 
@@ -74,5 +74,27 @@ int RedisSession::handleRead() {
 }
 
 int RedisSession::handleWrite() {
+  RedisCommand *cmd;
+
+  cmd = info_.NextWriteCommand();
+
+  while (cmd != NULL) {
+    BufferPos *current = cmd->NextBufferPos();
+    while (current != NULL && current->buffer_ != NULL) {
+      errno_t ret = TcpSend(fd_, current->buffer_);
+      if (ret < 0) {
+        return kError;
+      }
+      if (ret == kAgain) {
+        return kOk;
+      }
+      current = cmd->NextBufferPos();
+    }
+
+    // end of write current cmd,send next cmd
+    // TODO: free command
+    cmd = info_.NextWriteCommand();
+  }
+
   return kOk;
 }

@@ -60,7 +60,7 @@ int Server::Handle(int mask) {
       return kOk;
     }
     Infof("accept %s for fd %d", session->String(), fd);
-    engine_->AddEvent(fd, kEventRead, session);
+    engine_->AddEvent(fd, kEventRead | kEventWrite, session);
     session_map_[fd] = session;
   }
   return kOk;
