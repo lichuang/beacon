@@ -19,7 +19,7 @@ INCLUDE= -I./src
 
 CC=g++
 CFLAGS=-Wall -Werror -g $(MYCFLAGS)
-LDFLAGS= -L -lpthread
+LDFLAGS= -lpthread
 
 MYCFLAGS = 
 
