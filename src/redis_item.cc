@@ -31,12 +31,44 @@ RedisItem* newRedisItem(int type) {
   return NULL;
 }
 
+void RedisItem::GetValue(string *val) {
+  Buffer *buf = value_pos_.start_.buffer_;
+  char *start;
+  int cnt;
+
+  *val = "";
+  // start and end in the same buffer case
+  if (value_pos_.start_.buffer_ == value_pos_.end_.buffer_) {
+    buf = value_pos_.start_.buffer_;
+    start = buf->Start() + value_pos_.start_.pos_;
+    cnt = value_pos_.end_.pos_ - value_pos_.start_.pos_;
+    *val = string(start, cnt);
+    return;
+  }
+
+  // start and end in the different buffer case
+  while (buf != NULL) {
+    if (buf == value_pos_.start_.buffer_) { // start buffer
+      start = buf->Start() + value_pos_.start_.pos_;
+      cnt = buf->WritePos() - value_pos_.start_.pos_;
+      *val = string(start, cnt);
+    } else if (buf == value_pos_.end_.buffer_) { // end buffer
+      start = buf->Start();
+      cnt = value_pos_.end_.pos_;
+      *val += string(start, cnt);
+    } else { // mid buffers
+      start = buf->Start();
+      cnt = buf->WritePos();
+      *val += string(start, cnt);
+    }
+    buf = buf->NextBuffer();
+  }
+}
+
 bool RedisArrayItem::Parse(Buffer *buffer) {
   char c;
   int i, type;
   RedisItem *item;
-
-  state_ = PARSE_ARRAY_BEGIN;
 
   while (buffer->hasUnprocessedData() && state_ != PARSE_ARRAY_END) {
     switch (state_) {
@@ -44,6 +76,7 @@ bool RedisArrayItem::Parse(Buffer *buffer) {
       if (*(buffer->NextRead()) != kRedisArrayPrefix) {
         return false;
       }
+      markItemStartPos(buffer);
       state_ = PARSE_ARRAY_LENGTH;
       sign_ = 1;
       item_num_ = 0;
@@ -91,122 +124,154 @@ bool RedisArrayItem::Parse(Buffer *buffer) {
       }
       break;
     case PARSE_ARRAY_END:
+      markItemEndPos(buffer);
       break;
     }
   }
 
-  return state_ == PARSE_ARRAY_END;
+  return true;
+}
+
+RedisArrayItem::~RedisArrayItem() {
+  size_t i;
+  for (i = 0; i < array_.size(); ++i) {
+    delete array_[i];
+  }
 }
 
 bool RedisStringItem::Parse(Buffer *buffer) {
   char c;
 
-  state_ = PARSE_STRING_BEGIN;
-
-  while (buffer->hasUnprocessedData()) {
+  while (buffer->hasUnprocessedData() && state_ < PARSE_STRING_END) {
     switch (state_) {
     case PARSE_STRING_BEGIN:
       if (*(buffer->NextRead()) != kRedisStringPrefix) {
         return false;
       }
-      state_ = PARSE_STRING_LENGTH;
-      markStartPos(buffer);
-      buffer->AdvanceRead(1);
+      state_ = PARSE_STRING_CONTENT;
+      markItemStartPos(buffer);
       break;
-    case PARSE_STRING_LENGTH:
+    case PARSE_STRING_CONTENT:
+      markItemValueStartPos(buffer);
+      state_ = PARSE_STRING_R;
+      break;
+    case PARSE_STRING_R:
       c = *(buffer->NextRead());
       if (c == '\r') {
-        state_ = PARSE_STRING_END;
-      } else {
-        len_ += 1;
+        markItemValueEndPos(buffer);
+        state_ = PARSE_STRING_N;
       }
-      buffer->AdvanceRead(1);
       break;
+    case PARSE_STRING_N:
+      c = *(buffer->NextRead());
+      if (c != '\n') {
+        return false;
+      } else {
+        state_ = PARSE_STRING_END;
+      }
     case PARSE_STRING_END:
       c = *(buffer->NextRead());
-      markEndPos(buffer);
-      return true;
+      markItemEndPos(buffer);
       break;
     }
+    buffer->AdvanceRead(1);
   }
 
-  return false;
+  return true;
 }
 
 bool RedisBulkItem::Parse(Buffer *buffer) {
   char c;
 
-  state_ = PARSE_BULK_BEGIN;
-
   while (buffer->hasUnprocessedData()) {
+    c = *(buffer->NextRead());
     switch (state_) {
     case PARSE_BULK_BEGIN:
-      if (*(buffer->NextRead()) != kRedisBulkPrefix) {
+      if (c != kRedisBulkPrefix) {
         return false;
       }
-      state_ = PARSE_BULK_LENGTH;
-      markStartPos(buffer);
+      state_ = PARSE_BULK_LENGTH_R;
+      markItemStartPos(buffer);
       len_ = 0; 
-      buffer->AdvanceRead(1);
       break;
-    case PARSE_BULK_LENGTH:
-      c = *(buffer->NextRead());
+    case PARSE_BULK_LENGTH_R:
       if (c == '\r') {
-        state_ = PARSE_BULK_CONTENT;
-        buffer->AdvanceRead(1);
+        if (len_ <= 0) {
+          return false;
+        }
+        state_ = PARSE_BULK_LENGTH_N;
       } else if (!toNumber(c, &len_)) { 
         return false;
       }
-      buffer->AdvanceRead(1);
+      break;
+    case PARSE_BULK_LENGTH_N:
+      if (c != '\n') {
+        return false;
+      }
+      state_ = PARSE_BULK_CONTENT;
+      readed_len_ = 0;
       break;
     case PARSE_BULK_CONTENT:
-      if (len_ <= 0) {
+      if (readed_len_ == 0) {
+        markItemValueStartPos(buffer);
+      } 
+      ++readed_len_;
+      if (readed_len_ == len_) {
+        state_ = PARSE_BULK_CONTENT_R;
+      }
+      break;
+    case PARSE_BULK_CONTENT_R:
+      if (c != '\r') {
         return false;
       }
-      if (buffer->ReadableLength() < len_) {
+      markItemValueEndPos(buffer);
+      state_ = PARSE_BULK_CONTENT_N;
+      break;
+    case PARSE_BULK_CONTENT_N:
+      if (c != '\n') {
         return false;
       }
-      buffer->AdvanceRead(len_);
       state_ = PARSE_BULK_END;
       break;
     case PARSE_BULK_END:
-      buffer->AdvanceRead(1);
-      markEndPos(buffer);
+      markItemEndPos(buffer);
       return true;
       break;
     }
+    buffer->AdvanceRead(1);
+  }
+  if (state_ == PARSE_BULK_END && !buffer->hasUnprocessedData() && !ready_) {
+    markItemEndPos(buffer);
   }
 
-  return false;
+  return true;
 }
 
 bool RedisIntItem::Parse(Buffer *buffer) {
   char c;
 
-  state_ = PARSE_INT_BEGIN;
-
-  while (buffer->hasUnprocessedData() && state_ != PARSE_INT_END) {
+  while (buffer->hasUnprocessedData()) {
     switch (state_) {
     case PARSE_INT_BEGIN:
       if (*(buffer->NextRead()) != kRedisIntPrefix) {
         return false;
       }
       state_ = PARSE_INT_NUMBER;
-      markStartPos(buffer);
+      markItemStartPos(buffer);
       buffer->AdvanceRead(1);
       break;
     case PARSE_INT_NUMBER:
       c = *(buffer->NextRead());
       if (c == '\r') {
         state_ = PARSE_INT_END;
-        markEndPos(buffer);
-        return true;
       } else if (!isdigit(c)) { 
         return false;
       }
       buffer->AdvanceRead(1);
       break;
     case PARSE_INT_END:
+      markItemEndPos(buffer);
+      return true;
       break;
     }
   }

@@ -21,6 +21,7 @@ public:
 private:
   int handleRead();
   int handleWrite();
+  bool parseToken();
 
   void addQueryCommand(RedisCommand *);
 

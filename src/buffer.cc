@@ -1,19 +1,29 @@
+#include <string.h>
 #include "buffer.h"
 
 Buffer::Buffer(int size)
-  : write_pos_(0),
+  : buf_(new char[size]),
+    write_pos_(0),
     read_pos_(0),
-    init_size_(size),
+    size_(size),
     ref_cnt_(0),
     next_(NULL) {
-  buf_.reserve(size);
 }
 
 Buffer::~Buffer() {
 }
 
+bool Buffer::Write(const char *p, int len) {
+  if (len > WritableLength()) {
+    return false;
+  }
+  memcpy(NextWrite(), p, len);
+  AdvanceWrite(len);
+  return true;
+}
+
 char* Buffer::Start() {
-  return &buf_[0];
+  return buf_;
 }
 
 char* Buffer::NextWrite() {
@@ -25,23 +35,14 @@ char* Buffer::NextRead() {
 }
 
 int Buffer::WritableLength() {
-  return buf_.capacity() - write_pos_;
+  return size_ - write_pos_;
 }
 
 int Buffer::ReadableLength() {
   return write_pos_ - read_pos_;
 }
 
-void Buffer::Reserve(int addlen) {
-  if (int(buf_.capacity() - write_pos_) >= addlen) {
-    return;
-  }
-  buf_.reserve(addlen + write_pos_);
-}
-
 void Buffer::Reset() {
-  vector<char>(buf_).swap(buf_);
-  buf_.reserve(init_size_);
   write_pos_ = read_pos_ = 0;
   ref_cnt_ = 0;
 }

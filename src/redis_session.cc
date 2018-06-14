@@ -47,6 +47,19 @@ void RedisSession::AddResponseCommand(RedisCommand *cmd) {
   info_.AddWaitWriteCmd(cmd);
 }
 
+bool RedisSession::parseToken() {
+  RedisItem *item = info_.GetParser()->GetRedisItem();
+  if (item == NULL) {
+    return false;
+  }
+  if (item->GetType() != REDIS_ARRAY) {
+    Errorf("redis first item MUST be array type");
+    return false;
+  }
+
+  return true;
+}
+
 int RedisSession::handleRead() {
   int ret;
 
@@ -61,6 +74,9 @@ int RedisSession::handleRead() {
     Infof("query from %s %s", address_.String(), query_buf_->Start());
     RedisCommand *cmd = info_.GetParser()->Parse(query_buf_, NULL);
     if (cmd->GetReady()) {
+      if (!parseToken()) {
+        return kError;
+      }
       addQueryCommand(cmd);
     } else if (cmd->Error()) {
       delete cmd;

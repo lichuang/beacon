@@ -29,7 +29,7 @@ bool ParseType(char c, int *type) {
 }
 
 RedisParser::RedisParser(RedisInfo *info)
-  : info_(info), cmd_(NULL) {
+  : info_(info), item_(NULL), cmd_(NULL) {
   state_fun_[PARSE_BEGIN] = &RedisParser::parseBegin;
   state_fun_[PARSE_ITEM]  = &RedisParser::parseItem;
   state_fun_[PARSE_END]   = &RedisParser::parseEnd;
@@ -67,19 +67,19 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
 void RedisParser::reset() {
   state_ = PARSE_BEGIN;
   type_  = REDIS_NONE_TYPE;
+  if (item_ != NULL) {
+    delete item_;
+  }
 }
 
 bool RedisParser::parseBegin() {
+  reset();
   cmd_->Init(buffer_, buffer_->ReadPos());
   state_ = PARSE_ITEM;
   return true;
 }
 
 bool RedisParser::parseItem() {
-  // TODO: 
-  if (item_ != NULL) {
-
-  }
   char t = *(buffer_->NextRead());
 
   if (!ParseType(t, &type_)) {
@@ -96,8 +96,6 @@ bool RedisParser::parseEnd() {
   }
   buffer_->AdvanceRead(1);
   cmd_->End(buffer_, buffer_->ReadPos());
-
-  reset();
 
   return true;
 }

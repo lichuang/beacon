@@ -11,6 +11,7 @@ public:
   Buffer(int size);
   ~Buffer();
 
+  bool Write(const char*, int len);
   // return next writeable char
   char* NextWrite();
 
@@ -40,8 +41,6 @@ public:
 
   void Reset();
 
-  void  Reserve(int addlen);
-
   void IncrCnt() {
     ++ref_cnt_;
   }
@@ -60,7 +59,7 @@ public:
   }
 
   bool Full() {
-    return write_pos_ == int(buf_.capacity());
+    return write_pos_ == size_;
   }
 
   bool hasUnprocessedData() {
@@ -70,11 +69,14 @@ public:
   Buffer* NextBuffer() {
     return next_;
   }
+  void SetNextBuffer(Buffer *next) {
+    next_ = next;
+  }
 private:
-  vector<char> buf_;
+  char* buf_;
   int write_pos_;
   int read_pos_;
-  int init_size_;
+  int size_;
   int ref_cnt_;
   Buffer* next_;
 };

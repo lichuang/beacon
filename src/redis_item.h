@@ -2,6 +2,7 @@
 #define __REDIS_ITEM_H__
 
 #include <vector>
+#include <string>
 #include "buffer.h"
 
 using namespace std;
@@ -9,7 +10,7 @@ using namespace std;
 class Buffer;
 
 // redis data type
-enum {
+enum RedisItemType {
   REDIS_NONE_TYPE,
   REDIS_ARRAY,
   REDIS_BULK,
@@ -18,7 +19,7 @@ enum {
 };
 
 // item statemachine type
-enum {
+enum RedisItemStateType {
   NONE_ITEM_STATE,
 
   // for array
@@ -29,13 +30,18 @@ enum {
 
   // for string
   PARSE_STRING_BEGIN,
-  PARSE_STRING_LENGTH,
+  PARSE_STRING_CONTENT,
+  PARSE_STRING_R,
+  PARSE_STRING_N,
   PARSE_STRING_END,
 
   // for bulk
   PARSE_BULK_BEGIN,
-  PARSE_BULK_LENGTH,
+  PARSE_BULK_LENGTH_R,
+  PARSE_BULK_LENGTH_N,
   PARSE_BULK_CONTENT,
+  PARSE_BULK_CONTENT_R,
+  PARSE_BULK_CONTENT_N,
   PARSE_BULK_END,
 
   // for int
@@ -44,44 +50,104 @@ enum {
   PARSE_INT_END,
 };
 
+struct RedisItemPos {
+  BufferPos start_, end_;
+
+  RedisItemPos() {
+  }
+};
+
 struct RedisItem {
 public:
-  RedisItem(int type)
+  RedisItem(RedisItemType type, RedisItemStateType state)
     : type_(type),
-      state_(NONE_ITEM_STATE),
-      len_(0) {
+      state_(state),
+      ready_(false) {
   }
 
   virtual ~RedisItem() {}
 
   virtual bool Parse(Buffer *) = 0;
 
-  void markStartPos(Buffer* buf) {
-    start_.buffer_ = buf;
-    start_.pos_ = buf->ReadPos();
+  bool Ready() {
+    return ready_;
   }
 
-  void markEndPos(Buffer* buf) {
-    end_.buffer_ = buf;
-    end_.pos_ = buf->ReadPos();
+  void markItemStartPos(Buffer* buf) {
+    item_pos_.start_.buffer_ = buf;
+    item_pos_.start_.pos_ = buf->ReadPos();
+    ready_ = false;
   }
 
-  int type_;
+  void markItemEndPos(Buffer* buf) {
+    item_pos_.end_.buffer_ = buf;
+    item_pos_.end_.pos_ = buf->ReadPos();
+    ready_ = true;
+  }
+
+  void markItemValueStartPos(Buffer *buf) {
+    value_pos_.start_.buffer_ = buf;
+    value_pos_.start_.pos_ = buf->ReadPos();
+  }
+
+  void markItemValueEndPos(Buffer *buf) {
+    value_pos_.end_.buffer_ = buf;
+    value_pos_.end_.pos_ = buf->ReadPos();
+  }
+
+  // return item start buffer/pos
+  Buffer* GetItemStartBuffer() {
+    return item_pos_.start_.buffer_;
+  }
+  int GetItemStartPos() {
+    return item_pos_.start_.pos_;
+  }
+
+  // return item end buffer/pos
+  Buffer* GetItemEndBuffer() {
+    return item_pos_.end_.buffer_;
+  }
+  int GetItemEndPos() {
+    return item_pos_.end_.pos_;
+  }
+
+  // return value start buffer/pos
+  Buffer* GetValueStartBuffer() {
+    return value_pos_.start_.buffer_;
+  }
+  int GetValueStartPos() {
+    return value_pos_.start_.pos_;
+  }
+
+  // return value end buffer/pos
+  Buffer* GetValueEndBuffer() {
+    return value_pos_.end_.buffer_;
+  }
+  int GetValueEndPos() {
+    return value_pos_.end_.pos_;
+  }
+
+  // return start pos of the item and length of value
+  void GetValue(string *val);
+
+  RedisItemType GetType() {
+    return type_;
+  }
+protected:
+  RedisItemType type_;
   int state_;
+  bool ready_;
 
-  int len_;
-  BufferPos start_, end_;
-
-  Buffer *buffer_;
+  RedisItemPos value_pos_, item_pos_;
 };
 
 struct RedisArrayItem : public RedisItem {
 public:
   RedisArrayItem()
-    : RedisItem(REDIS_ARRAY)
+    : RedisItem(REDIS_ARRAY, PARSE_ARRAY_BEGIN)
   {}
 
-  virtual ~RedisArrayItem() {}
+  virtual ~RedisArrayItem();
   virtual bool Parse(Buffer *);
 
   int sign_;
@@ -92,7 +158,7 @@ public:
 struct RedisStringItem : public RedisItem {
 public:
   RedisStringItem()
-    : RedisItem(REDIS_STRING), str_len_(0)
+    : RedisItem(REDIS_STRING, PARSE_STRING_BEGIN), str_len_(0)
   {}
 
   virtual ~RedisStringItem() {}
@@ -105,20 +171,21 @@ public:
 struct RedisBulkItem : public RedisItem {
 public:
   RedisBulkItem()
-    : RedisItem(REDIS_BULK)
+    : RedisItem(REDIS_BULK, PARSE_BULK_BEGIN)
   {}
 
   virtual ~RedisBulkItem() {}
 
   virtual bool Parse(Buffer *);
 
+  int readed_len_;
   int len_;
 };
 
 struct RedisIntItem : public RedisItem {
 public:
   RedisIntItem()
-    : RedisItem(REDIS_INT)
+    : RedisItem(REDIS_INT, PARSE_INT_BEGIN)
   {}
 
   virtual ~RedisIntItem() {}
