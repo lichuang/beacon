@@ -42,9 +42,7 @@ RedisParser::~RedisParser() {
 RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
   if (cmd == NULL) { // req mode
     mode_ = REDIS_REQ_MODE;
-    if (cmd_ == NULL) {
-      cmd_ = info_->GetFreeCommand();
-    }
+    cmd_ = info_->GetFreeCommand();
   } else { // response mode
     mode_ = REDIS_REP_MODE;
     cmd_ = cmd;
@@ -57,7 +55,7 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
       cmd_->SetStatus(REDIS_COMMAND_ERROR);
       return cmd_;
     }
-    if (cmd_ && cmd_->GetReady()) {
+    if (cmd_ && cmd_->Ready()) {
       return cmd_;
     }
   }
@@ -67,9 +65,7 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
 void RedisParser::reset() {
   state_ = PARSE_BEGIN;
   type_  = REDIS_NONE_TYPE;
-  if (item_ != NULL) {
-    delete item_;
-  }
+  item_  = NULL;
 }
 
 bool RedisParser::parseBegin() {
@@ -86,16 +82,16 @@ bool RedisParser::parseItem() {
     return false;
   }
   item_ = newRedisItem(type_);
-  state_ = PARSE_END;
-  return item_->Parse(buffer_);
+  if (!item_->Parse(buffer_)) {
+    return false;
+  }
+  if (item_->Ready()) {
+    state_ = PARSE_END;
+    cmd_->End(buffer_, buffer_->ReadPos(), item_);
+  }
+  return true;
 }
 
 bool RedisParser::parseEnd() {
-  if (*buffer_->NextRead() != '\n') {
-    return false;
-  }
-  buffer_->AdvanceRead(1);
-  cmd_->End(buffer_, buffer_->ReadPos());
-
   return true;
 }

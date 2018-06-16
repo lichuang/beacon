@@ -44,5 +44,4 @@ int Buffer::ReadableLength() {
 
 void Buffer::Reset() {
   write_pos_ = read_pos_ = 0;
-  ref_cnt_ = 0;
 }

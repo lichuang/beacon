@@ -109,7 +109,7 @@ int RedisServer::handleRead() {
   while (cmd != NULL && query_buf_->hasUnprocessedData()) {
     cmd = info_.GetParser()->Parse(query_buf_, cmd);
 
-    if (cmd->GetReady()) {
+    if (cmd->Ready()) {
       session_->AddResponseCommand(cmd);
       info_.ResetReadCommand();
       cmd = info_.NextReadCommand();

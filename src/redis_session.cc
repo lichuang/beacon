@@ -47,21 +47,12 @@ void RedisSession::AddResponseCommand(RedisCommand *cmd) {
   info_.AddWaitWriteCmd(cmd);
 }
 
-bool RedisSession::parseToken() {
-  RedisItem *item = info_.GetParser()->GetRedisItem();
-  if (item == NULL) {
-    return false;
-  }
-  if (item->GetType() != REDIS_ARRAY) {
-    Errorf("redis first item MUST be array type");
-    return false;
-  }
-
-  return true;
-}
-
 int RedisSession::handleRead() {
   int ret;
+
+  if (query_buf_ == NULL || query_buf_->Full()) {
+    query_buf_ = new Buffer(kQueryBufferLen); 
+  }
 
   ret = TcpRead(fd_, query_buf_);
   if (ret < 0) {
@@ -73,17 +64,18 @@ int RedisSession::handleRead() {
   while (query_buf_->ReadableLength() > 0) {
     Infof("query from %s %s", address_.String(), query_buf_->Start());
     RedisCommand *cmd = info_.GetParser()->Parse(query_buf_, NULL);
-    if (cmd->GetReady()) {
-      if (!parseToken()) {
+    if (cmd->Ready()) {
+      if (!cmd->Parse()) {
         return kError;
       }
-      addQueryCommand(cmd);
+      if (cmd->NeedRoute()) {
+        addQueryCommand(cmd);
+      } else {
+        AddResponseCommand(cmd);
+      }
     } else if (cmd->Error()) {
       delete cmd;
       return false;
-    }
-    if (query_buf_->ReadableLength() == 0) {
-      query_buf_ = new Buffer(kQueryBufferLen); 
     }
   }
   return kOk;

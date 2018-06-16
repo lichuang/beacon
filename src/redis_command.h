@@ -9,14 +9,21 @@ enum {
   REDIS_COMMAND_NONE,
 };
 
+class RedisItem;
+
 class RedisCommand {
 public:
   RedisCommand();
   ~RedisCommand();
 
   void Init(Buffer *buf, int start);
-  void End(Buffer *buf, int end);
+  void End(Buffer *buf, int end, RedisItem*);
   void ReadyWrite();
+  bool Parse();
+
+  RedisItem* item() {
+    return item_;
+  }
 
   BufferPos* Current() {
     return &current_;
@@ -37,7 +44,7 @@ public:
     return status_;
   }
 
-  bool GetReady() {
+  bool Ready() {
     return status_ == REDIS_COMMAND_READY;
   }
 
@@ -45,11 +52,17 @@ public:
     return status_ == REDIS_COMMAND_ERROR;
   }
 
+  bool NeedRoute() {
+    return need_route_;
+  }
+
 private:
   BufferPos start_, end_;
   BufferPos current_;
   int status_;
   int mode_;
+  RedisItem *item_;
+  bool need_route_;
 };
 
 #endif // __REDIS_COMMAND_H__

@@ -25,6 +25,8 @@ enum RedisItemStateType {
   // for array
   PARSE_ARRAY_BEGIN,
   PARSE_ARRAY_LENGTH,
+  PARSE_ARRAY_LENGTH_N,
+  PARSE_ARRAY_ITEM_TYPE,
   PARSE_ARRAY_ITEM,
   PARSE_ARRAY_END,
 
@@ -144,7 +146,8 @@ protected:
 struct RedisArrayItem : public RedisItem {
 public:
   RedisArrayItem()
-    : RedisItem(REDIS_ARRAY, PARSE_ARRAY_BEGIN)
+    : RedisItem(REDIS_ARRAY, PARSE_ARRAY_BEGIN),
+      sign_(1),item_num_(0),current_(NULL)
   {}
 
   virtual ~RedisArrayItem();
@@ -152,6 +155,7 @@ public:
 
   int sign_;
   int item_num_;
+  RedisItem* current_;
   vector<RedisItem*> array_;
 };
 
@@ -185,12 +189,15 @@ public:
 struct RedisIntItem : public RedisItem {
 public:
   RedisIntItem()
-    : RedisItem(REDIS_INT, PARSE_INT_BEGIN)
+    : RedisItem(REDIS_INT, PARSE_INT_BEGIN), marked_int_(false)
   {}
 
   virtual ~RedisIntItem() {}
 
   virtual bool Parse(Buffer *);
+
+private:
+  bool marked_int_;
 };
 
 extern RedisItem* newRedisItem(int type);

@@ -25,9 +25,6 @@ public:
   ~RedisParser();
 
   RedisCommand* Parse(Buffer *buffer, RedisCommand *cmd);
-  RedisItem* GetRedisItem() {
-    return item_;
-  }
 
 private:
   bool parseBegin();
