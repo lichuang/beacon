@@ -50,7 +50,7 @@ void RedisCommand::End(Buffer *buf, int end, RedisItem *item) {
   item_ = item;
 }
 
-void RedisCommand::MarkError(const string& err) {
+void RedisCommand::MarkResponse(const string& err) {
   Buffer *buffer = GetBuffer(err.length() + 1);
   buffer->Write(err.c_str(), err.length());
   buffer->IncrCnt();
@@ -79,7 +79,7 @@ bool RedisCommand::Parse() {
   if (!isSupportCommand(cmd)) {
     Errorf("unspport cmd: %s", cmd.c_str());
     string err = "-(error) ERR unknown command '" + cmd + "'\r\n";
-    MarkError(err);
+    MarkResponse(err);
     need_route_ = false;
     return true;
   }

@@ -51,7 +51,7 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
 
   while (buffer_ && buffer_->hasUnprocessedData()) {
     if (!(this->*state_fun_[state_])()) {
-      //cmd_->SetStatus(REDIS_COMMAND_ERROR);
+      cmd_->MarkError();
       return cmd_;
     }
     if (cmd_ && cmd_->Ready()) {
@@ -78,6 +78,7 @@ bool RedisParser::parseItem() {
   char t = *(buffer_->NextRead());
 
   if (!ParseType(t, &type_)) {
+    buffer_->AdvanceRead(1);
     return false;
   }
   item_ = newRedisItem(type_);

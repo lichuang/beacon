@@ -167,6 +167,16 @@ TEST(RedisItemTests, TestRedisBulkItem) {
     EXPECT_EQ(item.GetValueStartBuffer()->Start()[item.GetValueStartPos()], 'f');
     EXPECT_EQ(buf3.Start()[item.GetValueEndPos()], '\r');
   }
+  // error case
+  {
+    Buffer buffer(100); 
+    RedisBulkItem item;
+    string err = "$1\r\n12\r\n";
+
+    buffer.Write(err.c_str(), err.length());
+    EXPECT_FALSE(item.Parse(&buffer));
+    EXPECT_FALSE(item.Ready());
+  }
 }
 
 TEST(RedisItemTests, TestRedisIntItem) {

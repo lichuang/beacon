@@ -18,6 +18,8 @@ enum {
   REDIS_COMMAND_RECV_RESPONSE_DONE,
   // response to client
   REDIS_COMMAND_RESPONSE,
+  // wrong format of command
+  REDIS_COMMAND_ERROR,
 };
 
 class RedisItem;
@@ -53,7 +55,13 @@ public:
     return need_route_;
   }
 
-  void MarkError(const string& err);
+  void MarkResponse(const string& err);
+  void MarkError() {
+    state_ = REDIS_COMMAND_ERROR;
+  }
+  bool Error() {
+    return state_ == REDIS_COMMAND_ERROR;
+  }
 private:
   // for request
   BufferPos recv_start_, recv_end_;

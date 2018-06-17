@@ -73,6 +73,8 @@ int RedisSession::handleRead() {
       } else {
         AddResponseCommand(cmd);
       }
+    } else if (cmd->Error()) {
+      return kError;
     }
   }
   return kOk;
