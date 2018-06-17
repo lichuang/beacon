@@ -47,12 +47,11 @@ RedisCommand* RedisParser::Parse(Buffer *buffer, RedisCommand *cmd) {
     mode_ = REDIS_REP_MODE;
     cmd_ = cmd;
   }
-  cmd_->SetMode(mode_);
   buffer_ = buffer;
 
   while (buffer_ && buffer_->hasUnprocessedData()) {
     if (!(this->*state_fun_[state_])()) {
-      cmd_->SetStatus(REDIS_COMMAND_ERROR);
+      //cmd_->SetStatus(REDIS_COMMAND_ERROR);
       return cmd_;
     }
     if (cmd_ && cmd_->Ready()) {

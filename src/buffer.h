@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include "singleton.h"
 
 using namespace std;
 
@@ -84,14 +85,13 @@ private:
 struct BufferPos {
   Buffer *buffer_;
   int     pos_;
-  int     write_pos_;
 
   BufferPos()
-    : buffer_(NULL), pos_(0), write_pos_(0) {}
-
-  bool Done() {
-    return pos_ == write_pos_;
-  }
+    : buffer_(NULL), pos_(0){}
 };
+
+
+extern Buffer* GetBuffer(int size);
+extern void    FreeBuffer(Buffer *);
 
 #endif // __BUFFER_H__

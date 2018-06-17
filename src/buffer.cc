@@ -45,3 +45,11 @@ int Buffer::ReadableLength() {
 void Buffer::Reset() {
   write_pos_ = read_pos_ = 0;
 }
+
+Buffer* GetBuffer(int size) {
+  return new Buffer(size);
+}
+
+void    FreeBuffer(Buffer *buffer) {
+  delete buffer;
+}

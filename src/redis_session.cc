@@ -51,7 +51,7 @@ int RedisSession::handleRead() {
   int ret;
 
   if (query_buf_ == NULL || query_buf_->Full()) {
-    query_buf_ = new Buffer(kQueryBufferLen); 
+    query_buf_ = GetBuffer(kQueryBufferLen); 
   }
 
   ret = TcpRead(fd_, query_buf_);
@@ -73,9 +73,6 @@ int RedisSession::handleRead() {
       } else {
         AddResponseCommand(cmd);
       }
-    } else if (cmd->Error()) {
-      delete cmd;
-      return false;
     }
   }
   return kOk;

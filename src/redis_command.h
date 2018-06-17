@@ -1,12 +1,23 @@
 #ifndef __REDIS_COMMAND_H__
 #define __REDIS_COMMAND_H__
 
+#include <string>
 #include "buffer.h"
 
+using namespace std;
+
+// redis command statemachine
 enum {
-  REDIS_COMMAND_READY,
-  REDIS_COMMAND_ERROR,
-  REDIS_COMMAND_NONE,
+  // recv client request
+  REDIS_COMMAND_RECV,
+  REDIS_COMMAND_RECV_DONE,
+  // forward client request to redis server
+  REDIS_COMMAND_FORWARD,
+  // recv response from redis server
+  REDIS_COMMAND_RECV_RESPONSE,
+  REDIS_COMMAND_RECV_RESPONSE_DONE,
+  // response to client
+  REDIS_COMMAND_RESPONSE,
 };
 
 class RedisItem;
@@ -21,6 +32,11 @@ public:
   void ReadyWrite();
   bool Parse();
 
+  bool Ready() {
+    return state_ == REDIS_COMMAND_RECV_DONE ||
+           state_ == REDIS_COMMAND_RECV_RESPONSE_DONE;
+  }
+
   RedisItem* item() {
     return item_;
   }
@@ -33,34 +49,21 @@ public:
 
   BufferPos*  NextBufferPos();
 
-  void SetMode(int mode) {
-    mode_ = mode;
-  }
-  void SetStatus(int status) {
-    status_ = status;
-  }
-
-  int GetStatus() {
-    return status_;
-  }
-
-  bool Ready() {
-    return status_ == REDIS_COMMAND_READY;
-  }
-
-  bool Error() {
-    return status_ == REDIS_COMMAND_ERROR;
-  }
-
   bool NeedRoute() {
     return need_route_;
   }
 
+  void MarkError(const string& err);
 private:
-  BufferPos start_, end_;
+  // for request
+  BufferPos recv_start_, recv_end_;
+  // for response
+  BufferPos send_start_, send_end_;
+
+  BufferPos *start_, *end_;
+
   BufferPos current_;
-  int status_;
-  int mode_;
+  int state_;
   RedisItem *item_;
   bool need_route_;
 };

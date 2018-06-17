@@ -113,9 +113,8 @@ int RedisServer::handleRead() {
       session_->AddResponseCommand(cmd);
       info_.ResetReadCommand();
       cmd = info_.NextReadCommand();
-    } else if (cmd->Error()){
-      return kError;
     }
+
     if (query_buf_->ReadableLength() == 0) {
       query_buf_ = new Buffer(kQueryBufferLen); 
     }
