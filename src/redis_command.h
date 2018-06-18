@@ -18,6 +18,7 @@ enum {
   REDIS_COMMAND_RECV_RESPONSE_DONE,
   // response to client
   REDIS_COMMAND_RESPONSE,
+  REDIS_COMMAND_RESPONSE_DONE,
   // wrong format of command
   REDIS_COMMAND_ERROR,
 };
@@ -29,7 +30,7 @@ public:
   RedisCommand();
   ~RedisCommand();
 
-  void Init(Buffer *buf, int start);
+  void Start(Buffer *buf, int start);
   void End(Buffer *buf, int end, RedisItem*);
   void ReadyWrite();
   bool Parse();
@@ -37,6 +38,11 @@ public:
   bool Ready() {
     return state_ == REDIS_COMMAND_RECV_DONE ||
            state_ == REDIS_COMMAND_RECV_RESPONSE_DONE;
+  }
+
+  void SetState(int state);
+  int State() {
+    return state_;
   }
 
   RedisItem* item() {

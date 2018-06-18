@@ -17,12 +17,11 @@ public:
   virtual int Handle(int mask);
 
   void AddResponseCommand(RedisCommand *);
+  void AddQueryCommand(RedisCommand *);
 
 private:
   int handleRead();
   int handleWrite();
-
-  void addQueryCommand(RedisCommand *);
 
 private:
   RedisInfo info_;

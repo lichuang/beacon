@@ -37,7 +37,7 @@ int RedisSession::Handle(int mask) {
   return kOk;
 }
 
-void RedisSession::addQueryCommand(RedisCommand *cmd) {
+void RedisSession::AddQueryCommand(RedisCommand *cmd) {
   //waiting_commands_.push_back(cmd);
   RedisServer *server = CreateServer(Address("127.0.0.1", 6379), this);
   server->addQueryCommand(cmd);
@@ -69,7 +69,7 @@ int RedisSession::handleRead() {
         return kError;
       }
       if (cmd->NeedRoute()) {
-        addQueryCommand(cmd);
+        AddQueryCommand(cmd);
       } else {
         AddResponseCommand(cmd);
       }
@@ -84,6 +84,13 @@ int RedisSession::handleWrite() {
   RedisCommand *cmd;
 
   cmd = info_.NextWriteCommand();
+  if (cmd == NULL) {
+    return kOk;
+  }
+
+  if (cmd->State() == REDIS_COMMAND_RECV_RESPONSE_DONE) {
+    cmd->SetState(REDIS_COMMAND_RESPONSE);
+  }
 
   while (cmd != NULL) {
     BufferPos *current = cmd->NextBufferPos();
@@ -96,6 +103,10 @@ int RedisSession::handleWrite() {
         return kOk;
       }
       current = cmd->NextBufferPos();
+    }
+    if (current == NULL) {
+      //cmd->SetState(REDIS_COMMAND_RESPONSE_DONE);
+      delete cmd;
     }
 
     // end of write current cmd,send next cmd

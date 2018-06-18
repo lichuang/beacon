@@ -11,7 +11,7 @@ RedisServer::RedisServer(const Address& address, RedisSession *session)
   : Session(-1, address, session->GetServer()),
     session_(session),
     status_(kDisconnected),
-    query_buf_(new Buffer(kQueryBufferLen)),
+    query_buf_(NULL),
     info_(this) { 
 }
 
@@ -89,6 +89,7 @@ int RedisServer::handleWrite() {
 
     // end of write current cmd,send next cmd
     info_.AddWaitReadCmd(cmd);
+    cmd->SetState(REDIS_COMMAND_RECV_RESPONSE);
     info_.ResetWriteCommand();
     cmd = info_.NextWriteCommand();
   }
@@ -98,6 +99,10 @@ int RedisServer::handleWrite() {
 
 int RedisServer::handleRead() {
   RedisCommand *cmd;
+
+  if (query_buf_ == NULL || query_buf_->Full()) {
+    query_buf_ = GetBuffer(kQueryBufferLen);
+  }
 
   errno_t ret = TcpRead(fd_, query_buf_);
   if (ret < 0) {
@@ -110,13 +115,10 @@ int RedisServer::handleRead() {
     cmd = info_.GetParser()->Parse(query_buf_, cmd);
 
     if (cmd->Ready()) {
+      cmd->SetState(REDIS_COMMAND_RECV_RESPONSE_DONE);
       session_->AddResponseCommand(cmd);
       info_.ResetReadCommand();
       cmd = info_.NextReadCommand();
-    }
-
-    if (query_buf_->ReadableLength() == 0) {
-      query_buf_ = new Buffer(kQueryBufferLen); 
     }
   }
 

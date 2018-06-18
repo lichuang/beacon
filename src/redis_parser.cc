@@ -69,7 +69,7 @@ void RedisParser::reset() {
 
 bool RedisParser::parseBegin() {
   reset();
-  cmd_->Init(buffer_, buffer_->ReadPos());
+  cmd_->Start(buffer_, buffer_->ReadPos());
   state_ = PARSE_ITEM;
   return true;
 }

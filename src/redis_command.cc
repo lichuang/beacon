@@ -25,15 +25,17 @@ RedisCommand::RedisCommand()
 }
 
 RedisCommand::~RedisCommand() {
+  FreeBuffers();
 }
 
-void RedisCommand::Init(Buffer *buf, int start) {
+void RedisCommand::Start(Buffer *buf, int start) {
   if (state_ == REDIS_COMMAND_RECV) {
     start_ = &recv_start_;
   } else {
     start_ = &send_start_;
   }
   start_->buffer_ = buf;
+  start_->buffer_->IncrCnt();
   start_->pos_    = start;
 }
 
@@ -48,6 +50,28 @@ void RedisCommand::End(Buffer *buf, int end, RedisItem *item) {
   end_->buffer_ = buf;
   end_->pos_    = end;
   item_ = item;
+  if (buf != start_->buffer_) {
+    end_->buffer_->IncrCnt();
+  }
+}
+
+void RedisCommand::SetState(int state) {
+  switch (state) {
+  case REDIS_COMMAND_FORWARD:
+    break;
+  case REDIS_COMMAND_RECV_RESPONSE:
+    // forward client request to redis done,free query buffers
+    FreeBuffers();
+    break;
+  case REDIS_COMMAND_RESPONSE_DONE:
+    // response to client done,free response buffers
+    FreeBuffers();
+    break;
+  default:
+    // default: do nothing
+    break;
+  }
+  state_ = state;
 }
 
 void RedisCommand::MarkResponse(const string& err) {
@@ -82,6 +106,8 @@ bool RedisCommand::Parse() {
     MarkResponse(err);
     need_route_ = false;
     return true;
+  } else {
+    need_route_ = true;
   }
 
   return true;
@@ -121,20 +147,31 @@ BufferPos* RedisCommand::NextBufferPos() {
 }
 
 void RedisCommand::FreeBuffers() {
-  /*
-  Buffer *buffer = start_.buffer_;
-  while (buffer != NULL) {
-    buffer->DescCnt();
-    if (buffer == end_.buffer_) {
-      break;
-    }
-    buffer = buffer->NextBuffer();
+  if (start_ == NULL || end_ == NULL) {
+    return;
   }
-  */
+  Buffer *buffer = start_->buffer_;
+  Buffer *next;
+
+  buffer->DescCnt();
+  while (buffer != NULL && buffer->RefCnt() == 0) {
+    next = buffer->NextBuffer();
+    FreeBuffer(buffer);
+    buffer = next;
+  }
+  if (end_->buffer_ != start_->buffer_) {
+    end_->buffer_->DescCnt();
+    if (end_->buffer_->RefCnt() == 0) {
+      FreeBuffer(end_->buffer_);
+    }
+  }
+
+  start_ = end_ = NULL;
 }
 
 static void initCommandMap() {
   gSupportCommandMap["SET"] = true;
+  gSupportCommandMap["GET"] = true;
 }
 
 static bool isSupportCommand(const string& cmd) {
